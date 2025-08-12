@@ -2,10 +2,10 @@
 const SITE_ENTRY_CODE = "97531";   // כניסה ראשונית לאתר
 const ADMIN_CODE = "1986";         // ניהול/דוחות מפורטים
 // מצב טעינת נתונים: "existing" = attendanceData קיים; "sheets" = קריאה ישירה לגיליון
-const MODE = "existing"; // "existing" | "sheets"
+const MODE = "sheets"; // "existing" | "sheets"
 const SHEET_ID = "";     // למצב "sheets": מזהה הגיליון
 const API_KEY  = "";     // למצב "sheets": Google API key
-const RANGE    = "נוכחות!A1:F"; // למצב "sheets": טווח כולל כותרות
+const RANGE = "גיליון1!A1:H"; // למצב "sheets": טווח כולל כותרות
 
 /* ===== SPA Routes ===== */
 const routes = { "/": "view-home", "/my-days": "view-my-days", "/admin": "view-admin" };
@@ -38,7 +38,13 @@ function tryGate(code) {
   gateMsg.textContent = "קוד שגוי. נסה שוב."; return false;
 }
 document.getElementById("gate-ok").addEventListener("click", ()=> tryGate(gateInput.value));
-document.getElementById("gate-cancel").addEventListener("click", ()=> { gateMsg.textContent = "הכניסה בוטלה. יש להזין קוד כדי להמשיך."; }); // Cancel = לא נכנסים
+document.getElementById("gate-cancel").addEventListener("click", ()=>{
+  try { localStorage.removeItem("site_authed_97531"); } catch(e){}
+  gateMsg.textContent = "הכניסה בוטלה. יש להזין קוד כדי להמשיך.";
+  gateOverlay.style.display = "flex";
+  try { location.hash = "#/"; } catch(e){}
+});
+// Cancel = לא נכנסים
 gateInput.addEventListener("keydown", e => { if (e.key === "Enter") tryGate(gateInput.value); });
 
 /* ===== ניווט ===== */
@@ -58,7 +64,7 @@ async function handleRoute() {
   showView(id);
 }
 window.addEventListener("hashchange", handleRoute);
-window.addEventListener("load", () => { setThisMonth(); handleRoute(); tryRegisterSW(); });
+window.addEventListener("load", () => { /* ENSURE_ON_LOAD */ if(!ensureSiteEntry()) return; setThisMonth(); handleRoute(); tryRegisterSW(); });
 
 /* ===== יציאה מגישת מנהל ===== */
 document.addEventListener("click", (e) => {
@@ -265,70 +271,56 @@ function escapeHtml(v){ return String(v||"").replace(/[&<>"]/g, s=>({'&':'&amp;'
 function tryRegisterSW(){ if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
 
 
-// ==== ניהול: הוספת אירוע מהעבר ====
-function syncAdminEventEmployeeList() {
-  var sel = document.getElementById('adminEventEmployee');
+// ===== רשימת עובדים לטופס אירוע + תאריך ברירת מחדל =====
+async function syncEventEmployeeList() {
+  const sel = document.getElementById('eventEmployeeSelect');
   if (!sel) return;
-  var keep = sel.value;
+  const keep = sel.value;
   sel.innerHTML = '<option value="">-- בחר עובד --</option>';
-  if (Array.isArray(window.employees)) {
-    window.employees.forEach(function(n){
-      var opt = document.createElement('option');
-      opt.value = n; opt.textContent = n;
-      sel.appendChild(opt);
-    });
+  let names = Array.isArray(window.employees) ? window.employees.slice() : [];
+  if (!names.length && typeof SHEET_ID === 'string' && typeof API_KEY === 'string' && SHEET_ID && API_KEY) {
+    try {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(SHEET_ID)}/values/A:A?key=${encodeURIComponent(API_KEY)}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const json = await res.json();
+        const vals = (json.values || []).slice(1).map(r => (r[0]||'').trim()).filter(Boolean);
+        names = [...new Set(vals)];
+      }
+    } catch(e) {}
   }
+  names.sort((a,b)=>a.localeCompare(b,'he'));
+  names.forEach(n=>{ const opt = document.createElement('option'); opt.value = n; opt.textContent = n; sel.appendChild(opt); });
   if (keep) sel.value = keep;
 }
-
-function setAdminEventDefaultDate() {
-  var el = document.getElementById('adminEventDate');
+function setEventDefaultDate() {
+  const el = document.getElementById('eventDate');
   if (!el) return;
-  var d = new Date();
-  var y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
-  el.value = y+'-'+m+'-'+day;
+  const d = new Date();
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  el.value = `${y}-${m}-${day}`;
 }
-
-function adminAddPastEvent(){
-  var name = (document.getElementById('adminEventEmployee')||{}).value || '';
-  var date = (document.getElementById('adminEventDate')||{}).value || '';
-  var locationStr = (document.getElementById('adminEventLocation')||{}).value || '';
-  var note = (document.getElementById('adminEventNote')||{}).value || '';
-  var msgEl = document.getElementById('adminEventMsg');
-  if (!name || !date || !locationStr) { if (msgEl) msgEl.textContent = 'יש למלא שם, תאריך ומיקום.'; return; }
-  if (!scriptUrl) { if (msgEl) msgEl.textContent = 'חסר scriptUrl של ה-Web App.'; return; }
-  var ts = new Date().toISOString();
-  var row = [name, 'event', ts, date, '', 'PWA', note, locationStr];
-  fetch(scriptUrl, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ values: [row] })
-  }).then(function(res){
-    if (res.ok) {
-      if (msgEl) msgEl.textContent = 'האירוע נשמר בהצלחה.';
-      document.getElementById('adminEventLocation').value = '';
-      document.getElementById('adminEventNote').value = '';
-      setAdminEventDefaultDate();
-    } else {
-      if (msgEl) msgEl.textContent = 'שגיאה בשמירה.';
-    }
-  }).catch(function(){
-    if (msgEl) msgEl.textContent = 'שגיאת רשת בשמירה.';
-  });
-}
-
-// סנכרון רשימות ותאריך כברירת מחדל כשעמוד ניהול נפתח
-window.addEventListener('load', function(){
-  syncAdminEventEmployeeList();
-  setAdminEventDefaultDate();
-});
-window.addEventListener('hashchange', function(){
-  // אם עברנו לעמוד ניהול
-  if (location.hash.indexOf('/admin') !== -1) {
-    setTimeout(function(){
-      syncAdminEventEmployeeList();
-      setAdminEventDefaultDate();
-    }, 200);
+window.addEventListener('load', ()=>{ syncEventEmployeeList(); setEventDefaultDate(); });
+window.addEventListener('hashchange', ()=>{ setTimeout(syncEventEmployeeList,200); setEventDefaultDate(); });
+setTimeout(syncEventEmployeeList, 1200);
+window.addEventListener('load', ()=>{
+  const mainSel = document.getElementById('employeeSelect');
+  const eventSel = document.getElementById('eventEmployeeSelect');
+  if (mainSel) {
+    mainSel.addEventListener('change', ()=>{
+      if (eventSel) eventSel.value = mainSel.value || '';
+      setEventDefaultDate();
+    });
   }
+});
+
+// הורדת באנרים מיותרים של "פתח דוחות" אם נשארו בטעות
+window.addEventListener('load', ()=>{
+  try {
+    document.querySelectorAll('button, a, div').forEach(el=>{
+      const t = (el.textContent||'').trim();
+      if (t.includes('פתח דוחות')) { el.remove(); }
+    });
+  } catch(e) {}
 });
 
