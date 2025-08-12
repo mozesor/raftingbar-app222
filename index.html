@@ -699,30 +699,31 @@
 <div id="employeeStatus">בחר עובד לצפייה במצב</div>
 </div>
 
-<!-- דיווח אירוע (נשמר לשיטס) -->
-<div class="card" style="margin-top:12px;">
-  <h2>דיווח אירוע</h2>
-  <div class="form-group">
-    <label>שם עובד:</label>
-    <select id="eventEmployeeSelect">
-      <option value="">-- בחר עובד --</option>
-    </select>
-  </div>
-  <div class="form-group">
-    <label>תאריך אירוע:</label>
-    <input type="date" id="eventDate">
-  </div>
-  <div class="form-group">
-    <label>מיקום האירוע:</label>
-    <input type="text" id="eventLocation" placeholder="לדוגמה: תל אביב, פארק הירקון">
-  </div>
-  <div class="form-group">
-    <label>הערה (לא חובה):</label>
-    <input type="text" id="eventNote" placeholder="פרטים קצרים (אם צריך)">
-  </div>
-  <button class="btn btn-admin" onclick="reportEvent()" style="width:100%;">📌 שמור אירוע</button>
-  <div id="eventMsg" class="auth-hint" style="margin-top:8px;"></div>
-</div>
+    <!-- דיווח אירוע (נשמר לשיטס) -->
+    <div class="card" style="margin-top:12px;">
+      <h2>דיווח אירוע</h2>
+      <div class="form-group">
+        <label>שם עובד:</label>
+        <select id="eventEmployeeSelect">
+          <option value="">-- בחר עובד --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>תאריך אירוע:</label>
+        <input type="date" id="eventDate">
+      </div>
+      <div class="form-group">
+        <label>מיקום האירוע:</label>
+        <input type="text" id="eventLocation" placeholder="לדוגמה: תל אביב, פארק הירקון">
+      </div>
+      <div class="form-group">
+        <label>הערה (לא חובה):</label>
+        <input type="text" id="eventNote" placeholder="פרטים קצרים (אם צריך)">
+      </div>
+      <button class="btn btn-admin" onclick="reportEvent()" style="width:100%;">📌 שמור אירוע</button>
+      <div id="eventMsg" class="auth-hint" style="margin-top:8px;"></div>
+    </div>
+    
 <div class="quick-actions">
 <div class="quick-action" onclick="showEmployeesStatus()">
 <div class="quick-action-value" id="activeCount">0</div>
@@ -794,8 +795,9 @@
   </div>
 </div>
 
+<button class="btn btn-admin" onclick="checkReportsPassword()" style="width: 100%;">🔓 פתח דוחות</button>
 </div>
-<div class="card" id="reportsContent" style="display: block;">
+<div class="card" id="reportsContent" style="display: none;">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
 <h2 style="margin:0;">📊 דוחות</h2>
 <button class="btn" onclick="lockReports()" style="background:#f44336;color:#fff;padding:8px 12px;font-size:14px;">🔒 נעל</button>

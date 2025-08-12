@@ -266,33 +266,34 @@ function escapeHtml(v){ return String(v||"").replace(/[&<>"]/g, s=>({'&':'&amp;'
 function tryRegisterSW(){ if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
 
 
-// ===== אירועים: מילוי שמות + תאריך ברירת מחדל + שליחה לשיטס =====
-function populateEventEmployees() {
-  try {
-    var sel = document.getElementById('eventEmployeeSelect');
-    if (!sel) return;
-    var keep = sel.value;
-    sel.innerHTML = '<option value="">-- בחר עובד --</option>';
-    var list = (Array.isArray(employees) ? employees.slice() : []);
-    if (!list.length && window.attendanceData) {
-      if (Array.isArray(window.attendanceData)) {
-        list = [...new Set(window.attendanceData
-          .map(r => (r["שם עובד"] || r["שם העובד"] || "").trim())
-          .filter(Boolean))];
-      } else {
-        list = Object.keys(window.attendanceData || {});
-      }
-    }
-    list.sort((a,b)=>a.localeCompare(b,'he'));
-    list.forEach(name => {
+// ==== סנכרון רשימת העובדים גם לטופס 'דיווח אירוע' ====
+function syncEventEmployeeList() {
+  var eventSelect = document.getElementById('eventEmployeeSelect');
+  if (!eventSelect) return;
+  var keep = eventSelect.value;
+  eventSelect.innerHTML = '<option value=\"\">-- בחר עובד --</option>';
+  if (Array.isArray(employees)) {
+    employees.forEach(function(n){
       var opt = document.createElement('option');
-      opt.value = name; opt.textContent = name;
-      sel.appendChild(opt);
+      opt.value = n; opt.textContent = n;
+      eventSelect.appendChild(opt);
     });
-    sel.value = keep || '';
-  } catch(e) {}
+  }
+  if (keep) eventSelect.value = keep;
+}
+// קריאה לאחר כל עדכון רשימת עובדים
+try {
+  const _oldUpdateEmployees = updateEmployeeSelects;
+  updateEmployeeSelects = function(){
+    _oldUpdateEmployees && _oldUpdateEmployees();
+    syncEventEmployeeList();
+  };
+} catch(e) {
+  // אם אין פונקציה קיימת, לפחות נמלא פעם אחת אחרי הטעינה
+  window.addEventListener('load', syncEventEmployeeList);
 }
 
+// ==== תאריך ברירת מחדל: היום ====
 function setDefaultEventDate() {
   var el = document.getElementById('eventDate');
   if (!el) return;
@@ -300,39 +301,18 @@ function setDefaultEventDate() {
   var y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
   el.value = y+'-'+m+'-'+day;
 }
+window.addEventListener('load', setDefaultEventDate);
 
-function reportEvent(){
-  var name = (document.getElementById('eventEmployeeSelect')||{}).value || '';
-  var date = (document.getElementById('eventDate')||{}).value || '';
-  var locationStr = (document.getElementById('eventLocation')||{}).value || '';
-  var note = (document.getElementById('eventNote')||{}).value || '';
-  var msgEl = document.getElementById('eventMsg');
-  if (!name || !date || !locationStr) { if (msgEl) msgEl.textContent = 'יש למלא שם, תאריך ומיקום.'; return; }
-  if (!scriptUrl) { if (msgEl) msgEl.textContent = 'חסר scriptUrl של ה-Web App.'; return; }
-  var ts = new Date().toISOString();
-  var row = [name, 'event', ts, date, '', 'PWA', note, locationStr];
-  fetch(scriptUrl, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ values: [row] })
-  }).then(function(res){
-    if (res.ok) {
-      if (msgEl) msgEl.textContent = 'האירוע נשמר בהצלחה.';
-      document.getElementById('eventLocation').value = '';
-      document.getElementById('eventNote').value = '';
-      setDefaultEventDate();
-    } else {
-      if (msgEl) msgEl.textContent = 'שגיאה בשמירה.';
-    }
-  }).catch(function(){
-    if (msgEl) msgEl.textContent = 'שגיאת רשת בשמירה.';
-  });
-}
-
-
-// Hook after load to ensure form has data
+// ==== בחירת עובד ראשי → ממלא את טופס האירוע ומעדכן תאריך להיום ====
 window.addEventListener('load', function(){
-  try { setDefaultEventDate(); populateEventEmployees(); } catch(e){}
-  // populate again after potential async sheet load
-  setTimeout(function(){ try { populateEventEmployees(); } catch(e){} }, 1500);
+  var mainSel = document.getElementById('employeeSelect');
+  var eventSel = document.getElementById('eventEmployeeSelect');
+  if (!mainSel) return;
+  mainSel.addEventListener('change', function(){
+    if (eventSel) {
+      eventSel.value = mainSel.value || '';
+    }
+    setDefaultEventDate(); // ברירת מחדל: אותו יום של הדיווח (היום)
+  });
 });
+
