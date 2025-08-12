@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>רפטינג בר – מערכת נוכחות</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#667eea" />
+  <link rel="icon" href="icon-512x512.png">
+  <link rel="apple-touch-icon" href="icon-512x512.png">
+  <link rel="stylesheet" href="https://unpkg.com/modern-css-reset/dist/reset.min.css">
+  <style>
+    :root { --bg:#f7f7fb; --fg:#111; --card:#fff; --muted:#666; --pri:#667eea; --accent:#764ba2; }
+    body { font-family: system-ui, Arial, Helvetica, sans-serif; background:var(--bg); color:var(--fg); }
+    header { background: linear-gradient(135deg,var(--pri),var(--accent)); color:#fff; padding:18px; border-radius:0 0 18px 18px; }
+    header h1 { margin:0; font-size:1.35rem; }
+    nav { display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+    nav a { background:#fff; color:#333; padding:9px 14px; border-radius:12px; text-decoration:none; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    nav a[aria-current="page"] { outline:2px solid rgba(0,0,0,.08); }
+    main { max-width:1000px; margin:24px auto; padding:0 14px; }
+    section.card { background:var(--card); border-radius:16px; padding:18px; box-shadow:0 2px 12px rgba(0,0,0,.06); margin-bottom:16px; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+    label { font-size:.95rem; color:#333; }
+    input, select, button { padding:10px 12px; border-radius:10px; border:1px solid #ddd; }
+    button { background:var(--pri); color:#fff; border:none; cursor:pointer; }
+    button.secondary { background:#eee; color:#111; }
+    table { width:100%; border-collapse:collapse; margin-top:14px; }
+    th, td { padding:10px; border-bottom:1px solid #eee; text-align:right; }
+    tfoot td { font-weight:700; }
+    .hidden { display:none !important; }
+    .muted { color:var(--muted); font-size:.9rem; }
+    /* Overlay for site entry lock */
+    #gate-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      display: none; align-items: center; justify-content: center; z-index: 9999;
+    }
+    #gate-box {
+      background: #fff; border-radius: 14px; padding: 18px; width: min(420px, 92vw);
+      box-shadow: 0 8px 40px rgba(0,0,0,.25);
+    }
+    #gate-box h3 { margin: 0 0 10px 0; }
+    #gate-box p { margin: 0 0 12px 0; color:#444; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>רפטינג בר – מערכת נוכחות</h1>
+    <nav>
+      <a href="#/" data-link>מסך ראשי</a>
+      <a href="#/my-days" data-link>ימי העבודה שלי</a>
+      <a href="#/admin" data-link>ניהול (נעול)</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Home -->
+    <section id="view-home" class="card">
+      <h2>ברוכים הבאים</h2>
+      <p class="muted">בתפריט תוכלו להיכנס ל"ימי העבודה שלי" או למסכי הניהול (נעול).</p>
+    </section>
+
+    <!-- My Days -->
+    <section id="view-my-days" class="card hidden">
+      <h2>ימי העבודה שלי</h2>
+      <form id="employee-form" class="row">
+        <div>
+          <label for="emp-name">שם עובד (כמו שמופיע בגיליון):</label><br>
+          <input id="emp-name" name="empName" list="emp-list" placeholder="התחל להקליד או בחר…" required>
+          <datalist id="emp-list"></datalist>
+        </div>
+        <div>
+          <label for="from">מתאריך:</label><br>
+          <input id="from" name="from" type="date" required>
+        </div>
+        <div>
+          <label for="to">עד תאריך:</label><br>
+          <input id="to" name="to" type="date" required>
+        </div>
+        <div style="align-self:end;">
+          <button type="submit">הצג</button>
+          <button type="button" id="btn-this-month" class="secondary">החודש הנוכחי</button>
+        </div>
+      </form>
+
+      <div id="emp-result" class="hidden">
+        <table id="emp-table">
+          <thead>
+            <tr>
+              <th>תאריך</th>
+              <th>שעת התחלה</th>
+              <th>שעת סיום</th>
+              <th>שעות</th>
+              <th>הערות</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3">סה״כ שעות</td>
+              <td id="emp-total">0</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+        <p class="muted" id="emp-meta"></p>
+      </div>
+      <div id="emp-empty" class="muted hidden">לא נמצאו רשומות בטווח שבחרת.</div>
+      <div id="emp-no-data" class="muted hidden">הנתונים עוד לא נטענו. ודא שנטען <code>attendanceData</code> או מלא SHEET_ID+API_KEY ב-app.js.</div>
+    </section>
+
+    <!-- Admin (locked by code 1986) -->
+    <section id="view-admin" class="card hidden">
+      <h2>ניהול</h2>
+      <p class="muted">מסכי ניהול ודוחות מפורטים נעולים בקוד <code>1986</code>.</p>
+      <div class="row">
+        <button id="btn-logout-admin" class="secondary">יציאה מנעילת מנהל</button>
+      </div>
+      <hr>
+      <p class="muted">כאן אפשר להוסיף כלים לניהול/דוחות מפורטים.</p>
+    </section>
+  </main>
+
+  <!-- Site entry overlay -->
+  <div id="gate-overlay">
+    <div id="gate-box">
+      <h3>כניסה למערכת</h3>
+      <p>הכנס קוד גישה:</p>
+      <input id="gate-input" type="password" placeholder="*****" inputmode="numeric" style="width:100%;margin-bottom:10px;">
+      <div class="row" style="justify-content:flex-start">
+        <button id="gate-ok">אישור</button>
+        <button class="secondary" id="gate-cancel">ביטול</button>
+      </div>
+      <p class="muted" id="gate-msg" style="margin-top:10px;"></p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
