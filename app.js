@@ -1,10 +1,16 @@
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_UMxeN_-dYeiR4xQa4HzT9ogZPv8BeYkRuUg0BOeEobOQZJVvj7gZU-2U_5LrxEtK/exec";
 /* ===== קונפיגורציה ===== */
-const { MODE, SHEET_ID, API_KEY, RANGE, APPS_SCRIPT_URL } = window.CONFIG || {};
-const SITE_ENTRY_CODE = "97531";
-const ADMIN_CODE = "1986";
+const SITE_ENTRY_CODE = "97531";   // כניסה ראשונית לאתר
+const ADMIN_CODE = "1986";         // ניהול/דוחות מפורטים
+// מצב טעינת נתונים: "existing" = attendanceData קיים; "sheets" = קריאה ישירה לגיליון
+const MODE = "sheets"; // "existing" | "sheets"
+const SHEET_ID = "1SNSdRdJy-vP--spyKmVwDbnaz808KEwTYSKiLreFn0w";     // למצב "sheets": מזהה הגיליון
+const API_KEY = "AIzaSyB8MgwEZ7hqS_hiZqTcwzODheuwdBA55j4";     // למצב "sheets": Google API key
+const RANGE = "גיליון1!A1:H"; // למצב "sheets": טווח כולל כותרות
 
 /* ===== SPA Routes ===== */
-const routes = { "/": "view-home", "/my-days": "view-my-days", "/event": "view-event", "/admin": "view-admin" };
+const routes = { "/": "view-home", "/my-days": "view-my-days", "/admin": "view-admin" };
+
 function showView(id) {
   document.querySelectorAll("main > section").forEach(sec => sec.classList.add("hidden"));
   const el = document.getElementById(id);
@@ -15,16 +21,25 @@ function showView(id) {
   });
 }
 
-/* ===== כניסה ראשונית ===== */
+/* ===== נעילת כניסה ראשונית (97531) ===== */
 const gateOverlay = document.getElementById("gate-overlay");
 const gateInput = document.getElementById("gate-input");
 const gateMsg = document.getElementById("gate-msg");
-function ensureSiteEntry() { const authed = localStorage.getItem("site_authed_97531") === "1"; if (authed) return true; openGate(); return false; }
+
+function ensureSiteEntry() {
+  const authed = localStorage.getItem("site_authed_97531") === "1";
+  if (authed) return true;
+  openGate();
+  return false;
+}
 function openGate() { gateOverlay.style.display = "flex"; gateMsg.textContent = ""; gateInput.value = ""; setTimeout(()=>gateInput.focus(),0); }
 function closeGate() { gateOverlay.style.display = "none"; }
-function tryGate(code) { if (String(code).trim() === SITE_ENTRY_CODE) { localStorage.setItem("site_authed_97531","1"); closeGate(); return true; } gateMsg.textContent = "קוד שגוי. נסה שוב."; return false; }
+function tryGate(code) {
+  if (String(code).trim() === SITE_ENTRY_CODE) { localStorage.setItem("site_authed_97531","1"); closeGate(); return true; }
+  gateMsg.textContent = "קוד שגוי. נסה שוב."; return false;
+}
 document.getElementById("gate-ok").addEventListener("click", ()=> tryGate(gateInput.value));
-document.getElementById("gate-cancel").addEventListener("click", ()=> { gateMsg.textContent = "הכניסה בוטלה. יש להזין קוד כדי להמשיך."; });
+document.getElementById("gate-cancel").addEventListener("click", ()=> { gateMsg.textContent = "הכניסה בוטלה. יש להזין קוד כדי להמשיך."; }); // Cancel = לא נכנסים
 gateInput.addEventListener("keydown", e => { if (e.key === "Enter") tryGate(gateInput.value); });
 
 /* ===== ניווט ===== */
@@ -35,7 +50,7 @@ async function handleRoute() {
     const isAuthed = localStorage.getItem("admin_authed_1986") === "1";
     if (!isAuthed) {
       const code = prompt("הכנס קוד מנהל:");
-      if (code === null) { location.hash = "#/"; return; }
+      if (code === null) { location.hash = "#/"; return; } // Cancel => לא נכנס
       if (code.trim() !== ADMIN_CODE) { alert("קוד שגוי."); location.hash = "#/"; return; }
       localStorage.setItem("admin_authed_1986", "1");
     }
@@ -44,7 +59,7 @@ async function handleRoute() {
   showView(id);
 }
 window.addEventListener("hashchange", handleRoute);
-window.addEventListener("load", () => { setThisMonth(); handleRoute(); tryRegisterSW(); loadAndPopulateNames(); });
+window.addEventListener("load", () => { setThisMonth(); handleRoute(); tryRegisterSW(); });
 
 /* ===== יציאה מגישת מנהל ===== */
 document.addEventListener("click", (e) => {
@@ -55,9 +70,41 @@ document.addEventListener("click", (e) => {
   }
 });
 
-/* ===== טעינת נתונים מהשיטס ===== */
+/* ===== “ימי העבודה שלי” ===== */
+const form = document.getElementById("employee-form");
+const btnThisMonth = document.getElementById("btn-this-month");
+const tblBody = document.querySelector("#emp-table tbody");
+const totalEl = document.getElementById("emp-total");
+const resultWrap = document.getElementById("emp-result");
+const emptyEl = document.getElementById("emp-empty");
+const noDataEl = document.getElementById("emp-no-data");
+const metaEl = document.getElementById("emp-meta");
+const empInput = document.getElementById("emp-name");
+const empList  = document.getElementById("emp-list");
+
+btnThisMonth?.addEventListener("click", setThisMonth);
+
+function setThisMonth() {
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  document.getElementById("from").value = toInputDate(first);
+  document.getElementById("to").value = toInputDate(last);
+}
+function toInputDate(d) { const m=String(d.getMonth()+1).padStart(2,"0"); const day=String(d.getDate()).padStart(2,"0"); return `${d.getFullYear()}-${m}-${day}`; }
+
+form?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const empName = empInput.value.trim();
+  const from = document.getElementById("from").value;
+  const to = document.getElementById("to").value;
+  if (!empName || !from || !to) return;
+  await ensureDataLoaded();
+  buildMyDays(empName, from, to);
+});
+
 async function ensureDataLoaded(){
-  if (window.attendanceData) return true;
+  if (window.attendanceData) { populateNames(); return true; }
   if (MODE !== "sheets") return false;
   if (!SHEET_ID || !API_KEY || !RANGE) return false;
   try {
@@ -68,77 +115,51 @@ async function ensureDataLoaded(){
     if (!json || !json.values || !json.values.length) return false;
     const rows = valuesToObjects(json.values);
     window.attendanceData = rows;
+    populateNames();
     return true;
-  } catch(err) { console.error(err); return false; }
+  } catch(err) {
+    console.error(err);
+    return false;
+  }
 }
+
+// מילוי רשימת שמות עובדים
+function populateNames(){
+  const data = window.attendanceData;
+  if (!data) return;
+  let names = [];
+  if (Array.isArray(data)){
+    names = [...new Set(data.map(r => String((r["שם עובד"]??"")).trim()).filter(Boolean))];
+  } else if (typeof data === "object"){
+    names = Object.keys(data||{});
+  }
+  names.sort((a,b)=>a.localeCompare(b,"he"));
+  empList.innerHTML = names.map(n=>`<option value="${escapeHtml(n)}"></option>`).join("");
+}
+
 function valuesToObjects(values){
   const headers = (values[0]||[]).map(h => String(h||"").trim());
-  const getCol = (cands)=>{ for (let i=0;i<headers.length;i++){ const h = String(headers[i]||"").trim().toLowerCase(); for (const c of cands){ if (h === c.toLowerCase()) return i; } } return -1; };
+  const col = (names)=>{
+    for (let i=0;i<headers.length;i++){
+      const h = String(headers[i]||"").trim().toLowerCase();
+      for (const n of names){ if (h === n.toLowerCase()) return i; }
+    }
+    return -1;
+  };
   const idx = {
-    name:   getCol(["שם העובד","שם עובד","שם"]),
-    action: getCol(["פעולה","action"]),
-    full:   getCol(["זמן מלא","תאריך מלא"]),
-    date:   getCol(["תאריך","date"]),
-    time:   getCol(["שעת פעולה","שעת פעילות","שעה","time"]),
-    src:    getCol(["מקור","source"]),
-    note:   getCol(["הערה","הערות","note"]),
-    location: getCol(["מיקום","location"]),
+    name: col(["שם עובד","שם","עובד"]),
+    action: col(["פעולה","action"]),
+    full: col(["תאריך מלא"]),
+    date: col(["תאריך","date"]),
+    time: col(["שעת פעילות","שעה","time"])
   };
   return values.slice(1).map(row => ({
     "שם עובד": row[idx.name] ?? "",
     "פעולה": row[idx.action] ?? "",
     "תאריך מלא": row[idx.full] ?? "",
     "תאריך": row[idx.date] ?? "",
-    "שעת פעילות": row[idx.time] ?? "",
-    "מקור": row[idx.src] ?? "PWA",
-    "הערה": row[idx.note] ?? "",
-    "מיקום": row[idx.location] ?? ""
+    "שעת פעילות": row[idx.time] ?? ""
   }));
-}
-
-/* ===== “ימי העבודה שלי” ===== */
-const form = document.getElementById("employee-form");
-const btnThisMonth = document.getElementById("btn-this-month");
-const tblBody = document.querySelector("#emp-table tbody");
-const totalEl = document.getElementById("emp-total");
-const eventsEl = document.getElementById("emp-events");
-const resultWrap = document.getElementById("emp-result");
-const emptyEl = document.getElementById("emp-empty");
-const noDataEl = document.getElementById("emp-no-data");
-const metaEl = document.getElementById("emp-meta");
-const empInput = document.getElementById("emp-name");
-const empList  = document.getElementById("emp-list");
-
-btnThisMonth?.addEventListener("click", setThisMonth);
-form?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const empName = empInput.value.trim();
-  const from = document.getElementById("from").value;
-  const to = document.getElementById("to").value;
-  if (!empName || !from || !to) return;
-  await ensureDataLoaded();
-  buildMyDays(empName, from, to);
-});
-function setThisMonth() {
-  const now = new Date();
-  const first = new Date(now.getFullYear(), now.getMonth(), 1);
-  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  document.getElementById("from").value = toInputDate(first);
-  document.getElementById("to").value = toInputDate(last);
-}
-function toInputDate(d) { const m=String(d.getMonth()+1).padStart(2,"0"); const day=String(d.getDate()).padStart(2,"0"); return `${d.getFullYear()}-${m}-${day}`; }
-function ddmmyyyy(d){ const day=String(d.getDate()).padStart(2,"0"); const m=String(d.getMonth()+1).padStart(2,"0"); return `${day}/${m}/${d.getFullYear()}`; }
-
-async function loadAndPopulateNames(){
-  const ok = await ensureDataLoaded();
-  if (!ok) return;
-  const data = window.attendanceData;
-  let names = [];
-  if (Array.isArray(data)){
-    names = [...new Set(data.map(r => String((r["שם עובד"]??r["שם העובד"]??"")).trim()).filter(Boolean))];
-  } else if (typeof data === "object") { names = Object.keys(data||{}); }
-  names.sort((a,b)=>a.localeCompare(b,"he"));
-  empList.innerHTML = names.map(n=>`<option value="${escapeHtml(n)}"></option>`).join("");
 }
 
 function buildMyDays(empName, fromStr, toStr) {
@@ -147,7 +168,6 @@ function buildMyDays(empName, fromStr, toStr) {
   noDataEl.classList.add("hidden");
   tblBody.innerHTML = "";
   totalEl.textContent = "0";
-  eventsEl.textContent = "סה״כ אירועים: 0";
   metaEl.textContent = "";
 
   const data = window.attendanceData;
@@ -159,20 +179,26 @@ function buildMyDays(empName, fromStr, toStr) {
 
   if (Array.isArray(data)){
     events = data
-      .filter(r => String((r["שם עובד"]??r["שם העובד"]??"")).trim() === empName)
+      .filter(r => String((r["שם עובד"]??"")).trim() === empName)
       .map(r => ({
         action: String((r["פעולה"]??"")).trim().toLowerCase(),
-        ts: parseTimestamp(String(r["תאריך מלא"]??""), String(r["תאריך"]??""), r["שעת פעילות"]),
-        note: r["הערה"]||""
+        ts: parseTimestamp(String(r["תאריך מלא"]??""), String(r["תאריך"]??""), r["שעת פעילות"])
       }))
       .filter(ev => ev.ts && ev.ts >= from && ev.ts <= to)
       .sort((a,b)=>a.ts-b.ts);
-  } else { noDataEl.classList.remove("hidden"); return; }
+  } else if (typeof data === "object" && data[empName]) {
+    for (const day of Object.keys(data[empName])){
+      const rec = data[empName][day] || {};
+      if (rec.checkIn){ const ts = new Date(rec.checkIn); if (ts>=from && ts<=to) events.push({ action:"checkin", ts }); }
+      if (rec.checkOut){ const ts = new Date(rec.checkOut); if (ts>=from && ts<=to) events.push({ action:"checkout", ts }); }
+    }
+    events.sort((a,b)=>a.ts-b.ts);
+  } else {
+    noDataEl.classList.remove("hidden"); return;
+  }
 
   const byDay = {};
-  let eventCount = 0;
   for (const ev of events){
-    if (ev.action === "event") { eventCount++; continue; }
     const day = toIsoDate(ev.ts);
     (byDay[day] ||= []).push(ev);
   }
@@ -181,14 +207,15 @@ function buildMyDays(empName, fromStr, toStr) {
   for (const day of Object.keys(byDay).sort()){
     let open = null;
     for (const ev of byDay[day]){
-      if (ev.action === "checkin"){
+      const type = ev.action === "in" ? "checkin" : ev.action === "out" ? "checkout" : ev.action;
+      if (type === "checkin"){
         if (open) outRows.push({date:day,start:timeHHMM(open.ts),end:"",hours:0,note:"חסרה יציאה"});
         open = ev;
-      } else if (ev.action === "checkout"){
+      } else if (type === "checkout"){
         if (open){
           const h = Math.max(0, (ev.ts - open.ts)/36e5);
           total += h;
-          outRows.push({date:day,start:timeHHMM(open.ts),end:timeHHMM(ev.ts),hours:round2(h),note:ev.note||""});
+          outRows.push({date:day,start:timeHHMM(open.ts),end:timeHHMM(ev.ts),hours:round2(h),note:""});
           open = null;
         } else {
           outRows.push({date:day,start:"",end:timeHHMM(ev.ts),hours:0,note:"חסרה כניסה"});
@@ -198,44 +225,18 @@ function buildMyDays(empName, fromStr, toStr) {
     if (open) outRows.push({date:day,start:timeHHMM(open.ts),end:"",hours:0,note:"חסרה יציאה"});
   }
 
-  if (outRows.length === 0 && eventCount===0){ emptyEl.classList.remove("hidden"); return; }
+  if (outRows.length === 0){ emptyEl.classList.remove("hidden"); return; }
   for (const r of outRows){
     const tr = document.createElement("tr");
-    const d = new Date(r.date+"T00:00:00");
-    tr.innerHTML = `<td>${ddmmyyyy(d)}</td><td>${r.start}</td><td>${r.end}</td><td>${r.hours}</td><td>${escapeHtml(r.note)}</td>`;
+    tr.innerHTML = `<td>${r.date}</td><td>${r.start}</td><td>${r.end}</td><td>${r.hours}</td><td>${escapeHtml(r.note)}</td>`;
     tblBody.appendChild(tr);
   }
   totalEl.textContent = String(round2(total));
-  eventsEl.textContent = `סה״כ אירועים: ${eventCount}`;
-  metaEl.textContent = `עובד: ${empName} | טווח: ${toDDMMYYYY(from)}–${toDDMMYYYY(to)} | שורות: ${outRows.length}`;
+  metaEl.textContent = `עובד: ${empName} | טווח: ${fromStr}–${toStr} | שורות: ${outRows.length}`;
 }
 
-/* ===== דיווח אירוע ===== */
-const evForm = document.getElementById("event-form");
-const evMsg  = document.getElementById("event-msg");
-evForm?.addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const name = document.getElementById("ev-name").value.trim();
-  const date = document.getElementById("ev-date").value;
-  const locationStr = document.getElementById("ev-location").value.trim();
-  const note = document.getElementById("ev-note").value.trim();
-  if (!name || !date || !locationStr) { evMsg.textContent = "יש למלא שם, תאריך ומיקום."; return; }
-  if (!APPS_SCRIPT_URL) { evMsg.textContent = "חסר URL של ה-Apps Script."; return; }
-  try{
-    // שליחה בפורמט שתואם לקוד שכבר יש לך (JSON עם values: [])
-    const ts = new Date().toISOString();
-    const row = [name, "event", ts, date, "", "PWA", note, locationStr];
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ values: [row] })
-    });
-    evMsg.textContent = res.ok ? "האירוע נשמר בהצלחה." : "שגיאה בשמירה.";
-    if (res.ok){ evForm.reset(); document.getElementById("ev-date").value = toInputDate(new Date()); }
-  }catch(err){ evMsg.textContent = "שגיאת רשת בשמירה."; }
-});
-
 /* ===== Helpers ===== */
+function toInputDate(d){ const m=String(d.getMonth()+1).padStart(2,"0"); const day=String(d.getDate()).padStart(2,"0"); return `${d.getFullYear()}-${m}-${day}`; }
 function parseTimestamp(full, dateOnly, timeVal){
   if (full){
     const d = new Date(String(full).replace(" ", "T"));
@@ -260,8 +261,78 @@ function timeHHMM(d){ return `${String(d.getHours()).padStart(2,"0")}:${String(d
 function toIsoDate(d){ const m=String(d.getMonth()+1).padStart(2,"0"); const day=String(d.getDate()).padStart(2,"0"); return `${d.getFullYear()}-${m}-${day}`; }
 function round2(x){ return Math.round(x*100)/100; }
 function escapeHtml(v){ return String(v||"").replace(/[&<>"]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
-function toInputDate(d){ const mm=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0"); return `${d.getFullYear()}-${mm}-${dd}`; }
-function toDDMMYYYY(d){ const day=String(d.getDate()).padStart(2,"0"); const m=String(d.getMonth()+1).padStart(2,"0"); return `${day}/${m}/${d.getFullYear()}`; }
 
 /* ===== PWA SW ===== */
 function tryRegisterSW(){ if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
+
+
+// ===== אירועים: מילוי שמות + תאריך ברירת מחדל + שליחה לשיטס =====
+function populateEventEmployees() {
+  try {
+    var sel = document.getElementById('eventEmployeeSelect');
+    if (!sel) return;
+    var keep = sel.value;
+    sel.innerHTML = '<option value="">-- בחר עובד --</option>';
+    var list = (Array.isArray(employees) ? employees.slice() : []);
+    if (!list.length && window.attendanceData) {
+      if (Array.isArray(window.attendanceData)) {
+        list = [...new Set(window.attendanceData
+          .map(r => (r["שם עובד"] || r["שם העובד"] || "").trim())
+          .filter(Boolean))];
+      } else {
+        list = Object.keys(window.attendanceData || {});
+      }
+    }
+    list.sort((a,b)=>a.localeCompare(b,'he'));
+    list.forEach(name => {
+      var opt = document.createElement('option');
+      opt.value = name; opt.textContent = name;
+      sel.appendChild(opt);
+    });
+    sel.value = keep || '';
+  } catch(e) {}
+}
+
+function setDefaultEventDate() {
+  var el = document.getElementById('eventDate');
+  if (!el) return;
+  var d = new Date();
+  var y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  el.value = y+'-'+m+'-'+day;
+}
+
+function reportEvent(){
+  var name = (document.getElementById('eventEmployeeSelect')||{}).value || '';
+  var date = (document.getElementById('eventDate')||{}).value || '';
+  var locationStr = (document.getElementById('eventLocation')||{}).value || '';
+  var note = (document.getElementById('eventNote')||{}).value || '';
+  var msgEl = document.getElementById('eventMsg');
+  if (!name || !date || !locationStr) { if (msgEl) msgEl.textContent = 'יש למלא שם, תאריך ומיקום.'; return; }
+  if (!scriptUrl) { if (msgEl) msgEl.textContent = 'חסר scriptUrl של ה-Web App.'; return; }
+  var ts = new Date().toISOString();
+  var row = [name, 'event', ts, date, '', 'PWA', note, locationStr];
+  fetch(scriptUrl, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ values: [row] })
+  }).then(function(res){
+    if (res.ok) {
+      if (msgEl) msgEl.textContent = 'האירוע נשמר בהצלחה.';
+      document.getElementById('eventLocation').value = '';
+      document.getElementById('eventNote').value = '';
+      setDefaultEventDate();
+    } else {
+      if (msgEl) msgEl.textContent = 'שגיאה בשמירה.';
+    }
+  }).catch(function(){
+    if (msgEl) msgEl.textContent = 'שגיאת רשת בשמירה.';
+  });
+}
+
+
+// Hook after load to ensure form has data
+window.addEventListener('load', function(){
+  try { setDefaultEventDate(); populateEventEmployees(); } catch(e){}
+  // populate again after potential async sheet load
+  setTimeout(function(){ try { populateEventEmployees(); } catch(e){} }, 1500);
+});
