@@ -1,12 +1,11 @@
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_UMxeN_-dYeiR4xQa4HzT9ogZPv8BeYkRuUg0BOeEobOQZJVvj7gZU-2U_5LrxEtK/exec";
 /* ===== קונפיגורציה ===== */
 const SITE_ENTRY_CODE = "97531";   // כניסה ראשונית לאתר
 const ADMIN_CODE = "1986";         // ניהול/דוחות מפורטים
 // מצב טעינת נתונים: "existing" = attendanceData קיים; "sheets" = קריאה ישירה לגיליון
-const MODE = "sheets"; // "existing" | "sheets"
-const SHEET_ID = "1SNSdRdJy-vP--spyKmVwDbnaz808KEwTYSKiLreFn0w";     // למצב "sheets": מזהה הגיליון
-const API_KEY = "AIzaSyB8MgwEZ7hqS_hiZqTcwzODheuwdBA55j4";     // למצב "sheets": Google API key
-const RANGE = "גיליון1!A1:H"; // למצב "sheets": טווח כולל כותרות
+const MODE = "existing"; // "existing" | "sheets"
+const SHEET_ID = "";     // למצב "sheets": מזהה הגיליון
+const API_KEY  = "";     // למצב "sheets": Google API key
+const RANGE    = "נוכחות!A1:F"; // למצב "sheets": טווח כולל כותרות
 
 /* ===== SPA Routes ===== */
 const routes = { "/": "view-home", "/my-days": "view-my-days", "/admin": "view-admin" };
@@ -266,53 +265,70 @@ function escapeHtml(v){ return String(v||"").replace(/[&<>"]/g, s=>({'&':'&amp;'
 function tryRegisterSW(){ if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
 
 
-// ==== סנכרון רשימת העובדים גם לטופס 'דיווח אירוע' ====
-function syncEventEmployeeList() {
-  var eventSelect = document.getElementById('eventEmployeeSelect');
-  if (!eventSelect) return;
-  var keep = eventSelect.value;
-  eventSelect.innerHTML = '<option value=\"\">-- בחר עובד --</option>';
-  if (Array.isArray(employees)) {
-    employees.forEach(function(n){
+// ==== ניהול: הוספת אירוע מהעבר ====
+function syncAdminEventEmployeeList() {
+  var sel = document.getElementById('adminEventEmployee');
+  if (!sel) return;
+  var keep = sel.value;
+  sel.innerHTML = '<option value="">-- בחר עובד --</option>';
+  if (Array.isArray(window.employees)) {
+    window.employees.forEach(function(n){
       var opt = document.createElement('option');
       opt.value = n; opt.textContent = n;
-      eventSelect.appendChild(opt);
+      sel.appendChild(opt);
     });
   }
-  if (keep) eventSelect.value = keep;
-}
-// קריאה לאחר כל עדכון רשימת עובדים
-try {
-  const _oldUpdateEmployees = updateEmployeeSelects;
-  updateEmployeeSelects = function(){
-    _oldUpdateEmployees && _oldUpdateEmployees();
-    syncEventEmployeeList();
-  };
-} catch(e) {
-  // אם אין פונקציה קיימת, לפחות נמלא פעם אחת אחרי הטעינה
-  window.addEventListener('load', syncEventEmployeeList);
+  if (keep) sel.value = keep;
 }
 
-// ==== תאריך ברירת מחדל: היום ====
-function setDefaultEventDate() {
-  var el = document.getElementById('eventDate');
+function setAdminEventDefaultDate() {
+  var el = document.getElementById('adminEventDate');
   if (!el) return;
   var d = new Date();
   var y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
   el.value = y+'-'+m+'-'+day;
 }
-window.addEventListener('load', setDefaultEventDate);
 
-// ==== בחירת עובד ראשי → ממלא את טופס האירוע ומעדכן תאריך להיום ====
-window.addEventListener('load', function(){
-  var mainSel = document.getElementById('employeeSelect');
-  var eventSel = document.getElementById('eventEmployeeSelect');
-  if (!mainSel) return;
-  mainSel.addEventListener('change', function(){
-    if (eventSel) {
-      eventSel.value = mainSel.value || '';
+function adminAddPastEvent(){
+  var name = (document.getElementById('adminEventEmployee')||{}).value || '';
+  var date = (document.getElementById('adminEventDate')||{}).value || '';
+  var locationStr = (document.getElementById('adminEventLocation')||{}).value || '';
+  var note = (document.getElementById('adminEventNote')||{}).value || '';
+  var msgEl = document.getElementById('adminEventMsg');
+  if (!name || !date || !locationStr) { if (msgEl) msgEl.textContent = 'יש למלא שם, תאריך ומיקום.'; return; }
+  if (!scriptUrl) { if (msgEl) msgEl.textContent = 'חסר scriptUrl של ה-Web App.'; return; }
+  var ts = new Date().toISOString();
+  var row = [name, 'event', ts, date, '', 'PWA', note, locationStr];
+  fetch(scriptUrl, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ values: [row] })
+  }).then(function(res){
+    if (res.ok) {
+      if (msgEl) msgEl.textContent = 'האירוע נשמר בהצלחה.';
+      document.getElementById('adminEventLocation').value = '';
+      document.getElementById('adminEventNote').value = '';
+      setAdminEventDefaultDate();
+    } else {
+      if (msgEl) msgEl.textContent = 'שגיאה בשמירה.';
     }
-    setDefaultEventDate(); // ברירת מחדל: אותו יום של הדיווח (היום)
+  }).catch(function(){
+    if (msgEl) msgEl.textContent = 'שגיאת רשת בשמירה.';
   });
+}
+
+// סנכרון רשימות ותאריך כברירת מחדל כשעמוד ניהול נפתח
+window.addEventListener('load', function(){
+  syncAdminEventEmployeeList();
+  setAdminEventDefaultDate();
+});
+window.addEventListener('hashchange', function(){
+  // אם עברנו לעמוד ניהול
+  if (location.hash.indexOf('/admin') !== -1) {
+    setTimeout(function(){
+      syncAdminEventEmployeeList();
+      setAdminEventDefaultDate();
+    }, 200);
+  }
 });
 
