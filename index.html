@@ -703,26 +703,12 @@
 <div class="quick-action-value" id="activeCount">0</div>
 <div class="quick-action-label">עובדים פעילים</div>
 </div>
-<div class="quick-action" onclick="showPage('reports')">
+<div class="quick-action" onclick="showPage('self')">
 <div class="quick-action-value" id="todayHours">0</div>
 <div class="quick-action-label">שעות היום</div>
 </div>
 </div>
 </div>
-<div class="card" style="margin-top:10px;">
-  <h2>➕ אירוע</h2>
-  <div class="form-group">
-    <label>תאריך האירוע:</label>
-    <input type="date" id="eventDate">
-  </div>
-  <div class="btn-group">
-    <button class="btn btn-admin" onclick="addEventForEmployee()">הוסף אירוע</button>
-  </div>
-  <div class="status-display">
-    <div>סה״כ אירועים היום לעובד: <strong id="todayEventsCount">0</strong></div>
-  </div>
-</div>
-
 </div>
 <!-- עמוד עובדים -->
 <div class="page" id="employeesPage">
@@ -731,32 +717,41 @@
 <div class="employee-grid" id="employeeGrid"></div>
 </div>
 </div>
-<!-- עמוד דוחות -->
-<div class="page" id="reportsPage">
+<button class="btn btn-admin" onclick="checkReportsPassword()" style="width: 100%;">🔓 פתח דוחות</button>
+</div>
+<div class="card" id="reportsContent" style="display: none;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+<h2 style="margin:0;">📊 דוחות</h2>
+<button class="btn" onclick="lockReports()" style="background:#f44336;color:#fff;padding:8px 12px;font-size:14px;">🔒 נעל</button>
+</div>
+<div class="btn-group" style="flex-direction: column;">
+<button class="btn btn-admin" onclick="exportToday()">📄 ייצא דוח יומי</button>
+<button class="btn btn-admin" onclick="exportDetailed()">📊 ייצא דוח מפורט</button>
+</div>
+</div>
+</div>
 
-<!-- עמוד דוחות -->
-<div class="page" id="reportsPage">
+<!-- עמוד דוח אישי -->
+<div class="page" id="selfPage">
   <div class="card">
     <h2>👤 דוח אישי לעובד</h2>
     <div class="form-group">
       <label>בחר עובד:</label>
-      <select id="selfReportEmployee"></select>
+      <select id="selfEmployee"></select>
     </div>
     <div class="form-group">
       <label>תקופה:</label>
-      <select id="selfReportPeriod">
+      <select id="selfPeriod">
         <option value="month" selected>החודש</option>
         <option value="week">השבוע</option>
         <option value="today">היום</option>
       </select>
     </div>
-    <button class="btn btn-admin" style="width:100%;" onclick="renderSelfReport()">הצג דוח</button>
+    <button class="btn btn-admin" style="width:100%;" onclick="renderSelf()">הצג דוח</button>
     <div class="detailed-reports-table" style="margin-top:12px;">
-      <table class="data-table" id="selfReportTable"></table>
+      <table class="data-table" id="selfTable"></table>
     </div>
   </div>
-</div>
-<!-- עמוד דוחות מפורטים -->
 </div>
 <!-- עמוד דוחות מפורטים -->
 <div class="page" id="detailedReportsPage">
@@ -824,12 +819,6 @@
 <!-- יתמלא באופן דינמי -->
 </div>
 <!-- גרף שעות יומיות -->
-<div class="card" id="detailedEventsListContainer" style="margin-bottom: 20px;">
-  <h3 style="margin-bottom: 10px;">📅 אירועים לפי תאריך</h3>
-  <div id="detailedEventsList" style="max-height:220px; overflow:auto; font-size:14px; color:#333;">
-    <!-- יתמלא דינמית -->
-  </div>
-</div>
 <div class="chart-container">
 <h3 style="margin-bottom: 15px;">📊 שעות יומיות</h3>
 <div id="detailedHoursChart">
@@ -952,7 +941,7 @@
 <div>👥</div>
 <div>עובדים</div>
 </button>
-<button class="nav-btn" onclick="showPage('reports')">
+<button class="nav-btn" onclick="showPage('self')">
 <div>📊</div>
 <div>דוחות</div>
 </button>
@@ -1128,9 +1117,7 @@
                                 newAttendanceData[employee][date] = {};
                             }
                             
-                            if (action === 'event') {
-                                newAttendanceData[employee][date].events = (newAttendanceData[employee][date].events || 0) + 1;
-                            } else if (action === 'checkin') {
+                            if (action === 'checkin') {
                                 newAttendanceData[employee][date].checkIn = timestamp;
                                 if (date === currentDate) {
                                     newCurrentStatus[employee] = 'in';
@@ -1776,7 +1763,6 @@
                     var dateKey = dateStrings[d];
                     var dayData = attendanceData[employee] && attendanceData[employee][dateKey];
                     
-                    if (dayData && dayData.events) { dayEvents += (dayData.events||0); }
                     if (dayData && dayData.checkIn && dayData.checkOut) {
                         var hours = calculateHours(dayData.checkIn, dayData.checkOut);
                         row.push(hours + ' שעות');
@@ -1982,7 +1968,6 @@
             
             updateDetailedStatsGrid(reportData);
             updateDetailedHoursChart(reportData);
-            updateDetailedEventsList(reportData);
             updateDetailedReportsTable(reportData);
         }
 
@@ -1990,6 +1975,7 @@
             var data = {
                 totalHours: 0,
                 totalEvents: 0,
+                eventsByDate: {},
                 totalDays: 0,
                 overtimeDays: 0,
                 overtimeHours: 0,
@@ -2011,8 +1997,6 @@
                 var employee = employeeList[e];
                 var employeeData = {
                     name: employee,
-                    totalEvents: 0,
-                    eventDates: [],
                     totalHours: 0,
                     workDays: 0,
                     overtimeDays: 0,
@@ -2025,9 +2009,6 @@
                     var dateStr = dates[d];
                     var dayData = attendanceData[employee] && attendanceData[employee][dateStr];
                     
-                    if (dayData && dayData.events){ employeeData.totalEvents += (dayData.events||0); employeeData.eventDates.push({date: dateStr, count: dayData.events}); }
-                    
-                    if (dayData && dayData.events) { dayEvents += (dayData.events||0); }
                     if (dayData && dayData.checkIn && dayData.checkOut) {
                         var hours = calculateHours(dayData.checkIn, dayData.checkOut);
                         employeeData.totalHours += hours;
@@ -2055,7 +2036,6 @@
                 data.employees.push(employeeData);
                 data.totalHours += employeeData.totalHours;
                 data.totalDays += employeeData.workDays;
-                data.totalEvents += employeeData.totalEvents;
                 data.overtimeDays += employeeData.overtimeDays;
                 data.overtimeHours += employeeData.overtimeHours;
                 data.missingDays += employeeData.missingDays;
@@ -2068,13 +2048,11 @@
             for (var d = 0; d < dates.length; d++) {
                 var dateStr = dates[d];
                 var dayTotal = 0;
-                var dayEvents = 0;
                 var dayWorkers = 0;
                 
                 for (var e = 0; e < employeeList.length; e++) {
                     var employee = employeeList[e];
                     var dayData = attendanceData[employee] && attendanceData[employee][dateStr];
-                    if (dayData && dayData.events) { dayEvents += (dayData.events||0); }
                     if (dayData && dayData.checkIn && dayData.checkOut) {
                         dayTotal += calculateHours(dayData.checkIn, dayData.checkOut);
                         dayWorkers++;
@@ -2085,8 +2063,7 @@
                     date: dateStr,
                     totalHours: dayTotal,
                     workers: dayWorkers,
-                    average: dayWorkers > 0 ? Math.round((dayTotal / dayWorkers) * 100) / 100 : 0,
-                    events: dayEvents
+                    average: dayWorkers > 0 ? Math.round((dayTotal / dayWorkers) * 100) / 100 : 0
                 });
             }
 
@@ -2128,35 +2105,10 @@
                 '<div class="stat-card">' +
                     '<div class="stat-value">' + data.missingDays + '</div>' +
                     '<div class="stat-label">ימים לא נסגרו</div>' +
-                '</div>' +
-                '<div class="stat-card">' +
-                    '<div class="stat-value">' + data.totalEvents + '</div>' +
-                    '<div class="stat-label">סה\'כ אירועים</div>' +
                 '</div>';
         }
 
-        
-function updateDetailedEventsList(data){
-  var box = document.getElementById('detailedEventsList');
-  if (!box) return;
-  var emp = document.getElementById('detailedEmployeeFilter').value;
-  var html = '';
-  if (emp !== 'all'){
-    var e = (data.employees || []).find(function(x){ return x.name === emp; });
-    if (!e || !e.eventDates || e.eventDates.length===0){ box.innerHTML = '<p style="color:#666;text-align:center;">אין אירועים בתקופה</p>'; return; }
-    e.eventDates.sort(function(a,b){ return a.date.localeCompare(b.date); });
-    html = e.eventDates.map(function(it){ var d = new Date(it.date); var dd = d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear(); return '<div>• '+dd+' — '+it.count+' אירוע(ים)</div>'; }).join('');
-  } else {
-    var byDate = {};
-    (data.employees||[]).forEach(function(e){ (e.eventDates||[]).forEach(function(it){ byDate[it.date]=(byDate[it.date]||0)+it.count; }); });
-    var keys = Object.keys(byDate).sort();
-    if (keys.length===0){ box.innerHTML = '<p style="color:#666;text-align:center;">אין אירועים בתקופה</p>'; return; }
-    html = keys.map(function(k){ var d=new Date(k); var dd=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear(); return '<div>• '+dd+' — '+byDate[k]+' אירוע(ים)</div>'; }).join('');
-  }
-  box.innerHTML = html;
-}
-
-function updateDetailedHoursChart(data) {
+        function updateDetailedHoursChart(data) {
             var chartDiv = document.getElementById('detailedHoursChart');
             if (!chartDiv) return;
             
@@ -2329,6 +2281,7 @@ function updateDetailedHoursChart(data) {
                 ['ימי שעות נוספות', reportData.overtimeDays],
                 ['ימים לא נסגרו', reportData.missingDays],
                 ['מספר עובדים', reportData.employees.length],
+                ['סה\'כ אירועים', reportData.totalEvents],
                 [''],
                 ['עובד מצטיין (הכי הרבה שעות)', ''],
                 ['עובד מצטיין (הכי יציב)', '']
@@ -2935,253 +2888,46 @@ function updateDetailedHoursChart(data) {
 })();
 
 
-
-/* === RB PATCH: Events + Self Report + Auth Enforcement === */
-
-function setEventDateDefault(){
-  var inp = document.getElementById('eventDate');
-  if (inp && !inp.value) { inp.value = getCurrentDate(); }
+/*** Self Report Page ***/
+function selfDateRange(period){
+  var end = new Date(); end.setHours(23,59,59,999);
+  var start = new Date(end);
+  if (period === 'today') start = new Date(end.getFullYear(), end.getMonth(), end.getDate(),0,0,0,0);
+  else if (period === 'week') start.setDate(end.getDate() - 6);
+  else start = new Date(end.getFullYear(), end.getMonth(), 1,0,0,0,0);
+  return {start:start, end:end};
 }
-
-
-    function getOrCreateDay(employee, dateKey) {
-
-      attendanceData[employee] = attendanceData[employee] || {};
-
-      attendanceData[employee][dateKey] = attendanceData[employee][dateKey] || {};
-
-      return attendanceData[employee][dateKey];
-
-    }
-
-    function addEventForEmployee() {
-
-      var employee = document.getElementById('employeeSelect').value;
-
-      if (!employee) { showAlert('אנא בחר עובד', 'error'); return; }
-
-      var dateKey = document.getElementById('eventDate') && document.getElementById('eventDate').value || getCurrentDate();
-
-      var day = getOrCreateDay(employee, dateKey);
-
-      day.events = (day.events || 0) + 1;
-
-      saveLocalData && saveLocalData();
-
-      updateAll && updateAll();
-
-      showAlert('נוסף אירוע ל-' + employee + ' בתאריך ' + dateKey, 'success');
-
-      if (isInitialized) {
-
-        var now = new Date();
-
-        recordToSheet(employee, 'event', now.toISOString(), dateKey, now.toLocaleTimeString('he-IL'));
-
-      }
-
-    }
-
-    function updateTodayEventsUI() {
-
-      var el = document.getElementById('todayEventsCount');
-
-      if (!el) return;
-
-      var employee = document.getElementById('employeeSelect').value;
-
-      if (!employee) { el.textContent = '0'; return; }
-
-      var day = attendanceData[employee] && attendanceData[employee][getCurrentDate()];
-
-      el.textContent = day && day.events ? day.events : 0;
-
-    }
-
-    function fillSelfReportEmployees() {
-
-      var sel = document.getElementById('selfReportEmployee');
-
-      if (!sel) return;
-
-      var cur = sel.value;
-
-      sel.innerHTML = '';
-
-      employees.forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
-
-      if (cur) sel.value = cur;
-
-    }
-
-    function dateRangeFor(period) {
-
-      var end = new Date(); end.setHours(23,59,59,999);
-
-      var start = new Date(end);
-
-      if (period === 'today') start = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 0,0,0,0);
-
-      else if (period === 'week') start.setDate(end.getDate() - 6);
-
-      else start = new Date(end.getFullYear(), end.getMonth(), 1, 0,0,0,0);
-
-      return { start: start, end: end };
-
-    }
-
-    function renderSelfReport() {
-
-      var empSel = document.getElementById('selfReportEmployee');
-
-      if (!empSel || !empSel.value) { showAlert('בחר עובד', 'error'); return; }
-
-      var emp = empSel.value;
-
-      var period = document.getElementById('selfReportPeriod').value;
-
-      var rng = dateRangeFor(period);
-
-      var table = document.getElementById('selfReportTable');
-
-      var rows = [['תאריך','כניסה','יציאה','שעות','אירועים']];
-
-      var daysWorked = 0, totalHours = 0;
-
-      for (var d=new Date(rng.start); d<=rng.end; d.setDate(d.getDate()+1)){
-
-        var y=d.getFullYear(), m=(''+(d.getMonth()+1)).padStart(2,'0'), da=(''+d.getDate()).padStart(2,'0');
-
-        var key=y+'-'+m+'-'+da; var day=attendanceData[emp] && attendanceData[emp][key];
-
-        if(!day) continue; var hours=0; if(day.checkIn) hours = calculateHours(day.checkIn, day.checkOut||null);
-
-        if(day.checkIn || day.checkOut){ daysWorked++; totalHours += hours; }
-
-        rows.push([ da+'/'+(d.getMonth()+1), day.checkIn?formatTime(day.checkIn):'-', day.checkOut?formatTime(day.checkOut):'-', hours||0, (day.events||0) ]);
-
-      }
-
-      rows.unshift(['ימי עבודה: '+daysWorked,'','סה״כ שעות: '+(Math.round(totalHours*10)/10),'','']);
-
-      var html = rows.map(function(r,i){ var tag=i===0?'th':'td'; return '<tr>'+r.map(function(c){return '<'+tag+'>'+c+'</'+tag+'>';}).join('')+'</tr>'; }).join('');
-
-      table.innerHTML = html;
-
-    }
-
-    // Hook updateAll to refresh events count & employee list
-
-    (function(){
-
-      var _u = updateAll;
-
-      updateAll = function(){ _u(); updateTodayEventsUI(); fillSelfReportEmployees(); setEventDateDefault(); };
-
-    })();
-
-    // Enforce auth on first load; Cancel won't dismiss
-
-    (function enforceAuth(){
-
-      var overlay=document.getElementById('authOverlay');
-
-      var input=document.getElementById('authCodeInput');
-
-      var enter=document.getElementById('authEnterBtn');
-
-      var cancel=document.getElementById('authCancelBtn');
-
-      function showOverlay(){ if(overlay){ overlay.style.display='flex'; input&&input.focus(); } }
-
-      function hideOverlay(){ if(overlay){ overlay.style.display='none'; } }
-
-      if (overlay && !localStorage.getItem('rb_is_authed')) showOverlay();
-
-      if (enter) enter.addEventListener('click', function(){
-
-        var code=(input&&input.value||'').trim();
-
-        if(code===adminPassword){ localStorage.setItem('rb_is_authed','1'); hideOverlay(); showAlert('ברוך הבא 👋','success'); }
-
-        else { if(input){ input.value=''; input.focus(); }
-
-          showAlert('קוד שגוי, נסה שוב','error');
-
-          var card=overlay && overlay.querySelector('.auth-card'); if(card){ card.style.animation='shake 0.5s'; setTimeout(function(){ card.style.animation=''; },500); }
-
-        }
-
-      });
-
-      if (cancel) cancel.addEventListener('click', function(){
-
-        showAlert('נדרש להזין קוד כדי להיכנס','error');
-
-        var card=overlay && overlay.querySelector('.auth-card'); if(card){ card.style.animation='shake 0.5s'; setTimeout(function(){ card.style.animation=''; },500); }
-
-      });
-
-    })();
-
-
-
-// Prevent interacting with the app while overlay visible
-function authOverlayVisible(){ var ov=document.getElementById('authOverlay'); return ov && ov.style.display !== 'none'; }
-function authBlocker(e){ if (authOverlayVisible()) { var card=document.querySelector('.auth-card'); if (card && !card.contains(e.target)) { e.stopPropagation(); e.preventDefault(); } } }
-document.addEventListener('click', authBlocker, true);
-
-
-/* === RB PATCH: DISABLE ALL PASSWORDS / LOCKS === */
-(function removeAllLocks(){
-  try {
-    // mark as authed and hide overlay
-    localStorage.setItem('rb_is_authed','1');
-    var ov = document.getElementById('authOverlay');
-    if (ov) ov.style.display = 'none';
-
-    // unlock admin
-    isAdminUnlocked = true;
-    var adminLock = document.getElementById('adminLock');
-    var adminContent = document.getElementById('adminContent');
-    if (adminLock) adminLock.style.display = 'none';
-    if (adminContent) adminContent.style.display = 'block';
-
-    // unlock detailed reports
-    isDetailedReportsUnlocked = true;
-    var drLock = document.getElementById('detailedReportsLock');
-    var drContent = document.getElementById('detailedReportsContent');
-    if (drLock) drLock.style.display = 'none';
-    if (drContent) drContent.style.display = 'block';
-
-    // unlock reports (ensure page visible)
-    var reportsLock = document.getElementById('reportsLock');
-    var reportsContent = document.getElementById('reportsContent');
-    if (reportsLock) reportsLock.style.display = 'none';
-    if (reportsContent) reportsContent.style.display = 'block';
-
-    // override gate functions to no-ops that always succeed
-    window.checkAdminPassword = function(){ isAdminUnlocked = true; if (adminLock) adminLock.style.display='none'; if (adminContent) adminContent.style.display='block'; showAlert('כניסה לניהול הופעלה (ללא סיסמה)', 'success'); };
-    window.lockAdmin = function(){ isAdminUnlocked = true; if (adminLock) adminLock.style.display='none'; if (adminContent) adminContent.style.display='block'; };
-    window.checkDetailedReportsPassword = function(){ isDetailedReportsUnlocked=true; if (drLock) drLock.style.display='none'; if (drContent) drContent.style.display='block'; showAlert('דוחות מפורטים פתוחים (ללא סיסמה)', 'success'); };
-    window.lockDetailedReports = function(){ isDetailedReportsUnlocked=true; if (drLock) drLock.style.display='none'; if (drContent) drContent.style.display='block'; };
-    window.checkReportsPassword = function(){ if (reportsLock) reportsLock.style.display='none'; if (reportsContent) reportsContent.style.display='block'; showAlert('דוחות נפתחו (ללא סיסמה)', 'success'); };
-    window.lockReports = function(){ if (reportsLock) reportsLock.style.display='none'; if (reportsContent) reportsContent.style.display='block'; };
-
-    // allow navigation even if some old guards exist
-    var _showPage = window.showPage;
-    window.showPage = function(pageName){
-      try{
-        // force relevant content visible
-        if (pageName==='admin'){ if (adminLock) adminLock.style.display='none'; if (adminContent) adminContent.style.display='block'; }
-        if (pageName==='detailedReports'){ if (drLock) drLock.style.display='none'; if (drContent) drContent.style.display='block'; }
-        if (pageName==='reports'){ if (reportsLock) reportsLock.style.display='none'; if (reportsContent) reportsContent.style.display='block'; }
-      }catch(e){}
-      return _showPage ? _showPage(pageName) : null;
-    };
-
-  } catch(e) { console.log('removeAllLocks error', e); }
-})();
+function fillSelfEmployees(){
+  var sel = document.getElementById('selfEmployee');
+  if(!sel) return;
+  var keep = sel.value;
+  sel.innerHTML='';
+  employees.forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+  if(keep) sel.value = keep;
+}
+function renderSelf(){
+  var emp = (document.getElementById('selfEmployee')||{}).value;
+  if(!emp){ showAlert('בחר עובד', 'error'); return; }
+  var period = (document.getElementById('selfPeriod')||{}).value || 'month';
+  var rng = selfDateRange(period);
+  var rows = [['תאריך','כניסה','יציאה','שעות','אירועים']];
+  var days=0, total=0, eventsTotal=0;
+  for (var d=new Date(rng.start); d<=rng.end; d.setDate(d.getDate()+1)){
+    var y=d.getFullYear(), m=(''+(d.getMonth()+1)).padStart(2,'0'), da=(''+d.getDate()).padStart(2,'0');
+    var key=y+'-'+m+'-'+da;
+    var day=attendanceData[emp] && attendanceData[emp][key];
+    if(!day) continue;
+    var hours=0; if(day.checkIn) hours = calculateHours(day.checkIn, day.checkOut||null);
+    if(day.checkIn || day.checkOut){ days++; total+=hours; }
+    var ev = day.events || 0; eventsTotal += ev;
+    rows.push([da+'/'+(d.getMonth()+1), day.checkIn?formatTime(day.checkIn):'-', day.checkOut?formatTime(day.checkOut):'-', hours||0, ev]);
+  }
+  rows.unshift(['ימי עבודה: '+days, '', 'סה״כ שעות: '+(Math.round(total*10)/10), '', 'סה״כ אירועים: '+eventsTotal]);
+  var table = document.getElementById('selfTable');
+  var htmlRows = rows.map(function(r,i){ var tag = i===0?'th':'td'; return '<tr>'+r.map(function(c){ return '<'+tag+'>'+c+'</'+tag+'>';}).join('')+'</tr>'; }).join('');
+  table.innerHTML = htmlRows;
+}
+(function(){ var _u = updateAll; updateAll = function(){ _u(); fillSelfEmployees(); }; })();
 
 </script>
 </body>
