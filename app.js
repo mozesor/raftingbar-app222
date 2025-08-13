@@ -2,10 +2,10 @@
 const SITE_ENTRY_CODE = "97531";   // כניסה ראשונית לאתר
 const ADMIN_CODE = "1986";         // ניהול/דוחות מפורטים
 // מצב טעינת נתונים: "existing" = attendanceData קיים; "sheets" = קריאה ישירה לגיליון
-const MODE = "sheets"; // "existing" | "sheets"
+const MODE = "existing"; // "existing" | "sheets"
 const SHEET_ID = "";     // למצב "sheets": מזהה הגיליון
 const API_KEY  = "";     // למצב "sheets": Google API key
-const RANGE = "גיליון1!A1:H"; // למצב "sheets": טווח כולל כותרות
+const RANGE    = "נוכחות!A1:F"; // למצב "sheets": טווח כולל כותרות
 
 /* ===== SPA Routes ===== */
 const routes = { "/": "view-home", "/my-days": "view-my-days", "/admin": "view-admin" };
@@ -38,13 +38,7 @@ function tryGate(code) {
   gateMsg.textContent = "קוד שגוי. נסה שוב."; return false;
 }
 document.getElementById("gate-ok").addEventListener("click", ()=> tryGate(gateInput.value));
-document.getElementById("gate-cancel").addEventListener("click", ()=>{
-  try { localStorage.removeItem("site_authed_97531"); } catch(e){}
-  gateMsg.textContent = "הכניסה בוטלה. יש להזין קוד כדי להמשיך.";
-  gateOverlay.style.display = "flex";
-  try { location.hash = "#/"; } catch(e){}
-});
-// Cancel = לא נכנסים
+document.getElementById("gate-cancel").addEventListener("click", ()=> { gateMsg.textContent = "הכניסה בוטלה. יש להזין קוד כדי להמשיך."; }); // Cancel = לא נכנסים
 gateInput.addEventListener("keydown", e => { if (e.key === "Enter") tryGate(gateInput.value); });
 
 /* ===== ניווט ===== */
@@ -64,7 +58,7 @@ async function handleRoute() {
   showView(id);
 }
 window.addEventListener("hashchange", handleRoute);
-window.addEventListener("load", () => { /* ENSURE_ON_LOAD */ if(!ensureSiteEntry()) return; setThisMonth(); handleRoute(); tryRegisterSW(); });
+window.addEventListener("load", () => { setThisMonth(); handleRoute(); tryRegisterSW(); });
 
 /* ===== יציאה מגישת מנהל ===== */
 document.addEventListener("click", (e) => {
@@ -271,56 +265,71 @@ function escapeHtml(v){ return String(v||"").replace(/[&<>"]/g, s=>({'&':'&amp;'
 function tryRegisterSW(){ if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
 
 
-// ===== רשימת עובדים לטופס אירוע + תאריך ברירת מחדל =====
-async function syncEventEmployeeList() {
-  const sel = document.getElementById('eventEmployeeSelect');
-  if (!sel) return;
-  const keep = sel.value;
-  sel.innerHTML = '<option value="">-- בחר עובד --</option>';
-  let names = Array.isArray(window.employees) ? window.employees.slice() : [];
-  if (!names.length && typeof SHEET_ID === 'string' && typeof API_KEY === 'string' && SHEET_ID && API_KEY) {
-    try {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(SHEET_ID)}/values/A:A?key=${encodeURIComponent(API_KEY)}`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const json = await res.json();
-        const vals = (json.values || []).slice(1).map(r => (r[0]||'').trim()).filter(Boolean);
-        names = [...new Set(vals)];
-      }
-    } catch(e) {}
-  }
-  names.sort((a,b)=>a.localeCompare(b,'he'));
-  names.forEach(n=>{ const opt = document.createElement('option'); opt.value = n; opt.textContent = n; sel.appendChild(opt); });
-  if (keep) sel.value = keep;
-}
-function setEventDefaultDate() {
-  const el = document.getElementById('eventDate');
-  if (!el) return;
-  const d = new Date();
-  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
-  el.value = `${y}-${m}-${day}`;
-}
-window.addEventListener('load', ()=>{ syncEventEmployeeList(); setEventDefaultDate(); });
-window.addEventListener('hashchange', ()=>{ setTimeout(syncEventEmployeeList,200); setEventDefaultDate(); });
-setTimeout(syncEventEmployeeList, 1200);
-window.addEventListener('load', ()=>{
-  const mainSel = document.getElementById('employeeSelect');
-  const eventSel = document.getElementById('eventEmployeeSelect');
-  if (mainSel) {
-    mainSel.addEventListener('change', ()=>{
-      if (eventSel) eventSel.value = mainSel.value || '';
-      setEventDefaultDate();
-    });
-  }
-});
+// ===== Auto-update events counter in Reports =====
+(function(){
+  function getReportsParams(){
+    var root = document.getElementById('reportsContent');
+    if (!root) return null;
 
-// הורדת באנרים מיותרים של "פתח דוחות" אם נשארו בטעות
-window.addEventListener('load', ()=>{
-  try {
-    document.querySelectorAll('button, a, div').forEach(el=>{
-      const t = (el.textContent||'').trim();
-      if (t.includes('פתח דוחות')) { el.remove(); }
+    // Try to find employee input/select inside reports
+    var name = '';
+    var sel = root.querySelector('select');
+    if (sel && sel.value) name = sel.value.trim();
+    if (!name) {
+      var inp = root.querySelector('input[list], input[type="text"]');
+      if (inp && inp.value) name = inp.value.trim();
+    }
+    // Fallback: maybe same as main select
+    if (!name) {
+      var mainSel = document.getElementById('employeeSelect');
+      if (mainSel && mainSel.value) name = mainSel.value.trim();
+    }
+
+    // Find date range (first and last date inputs)
+    var dates = Array.from(root.querySelectorAll('input[type="date"]'));
+    var from = '', to = '';
+    if (dates.length === 1) { from = to = dates[0].value; }
+    else if (dates.length >= 2) { from = dates[0].value; to = dates[dates.length-1].value; }
+
+    if (!name || !from || !to) return null;
+    return { name: name, from: from, to: to };
+  }
+
+  async function refreshEventsTotal(){
+    try {
+      var p = getReportsParams(); if (!p) return;
+      if (typeof updateEventsTotalStandalone === 'function') {
+        await updateEventsTotalStandalone(p.name, p.from, p.to);
+      }
+    } catch(e){}
+  }
+
+  // Wire listeners inside reports
+  function wireReportsListeners(){
+    var root = document.getElementById('reportsContent');
+    if (!root) return;
+    // On any change or click inside the reports card, recompute after a short delay
+    root.addEventListener('change', function(){ setTimeout(refreshEventsTotal, 150); });
+    root.addEventListener('click', function(e){
+      var t = (e.target && (e.target.tagName==='BUTTON' || e.target.type==='submit'));
+      if (t) setTimeout(refreshEventsTotal, 250);
     });
-  } catch(e) {}
-});
+  }
+
+  window.addEventListener('load', function(){
+    wireReportsListeners();
+    setTimeout(refreshEventsTotal, 800);
+    setTimeout(refreshEventsTotal, 1600); // in case data loads async
+  });
+  window.addEventListener('hashchange', function(){
+    setTimeout(refreshEventsTotal, 500);
+  });
+  // Also refresh periodically for a few seconds after load to catch async rendering
+  var _tries = 0;
+  var iv = setInterval(function(){
+    _tries++;
+    refreshEventsTotal();
+    if (_tries > 10) clearInterval(iv);
+  }, 700);
+})();
 
