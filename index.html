@@ -1122,7 +1122,9 @@
                                 newAttendanceData[employee][date] = {};
                             }
                             
-                            if (action === 'checkin') {
+                            if (action === 'event') {
+                                newAttendanceData[employee][date].events = (newAttendanceData[employee][date].events || 0) + 1;
+                            } else if (action === 'checkin') {
                                 newAttendanceData[employee][date].checkIn = timestamp;
                                 if (date === currentDate) {
                                     newCurrentStatus[employee] = 'in';
