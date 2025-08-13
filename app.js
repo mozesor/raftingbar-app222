@@ -5,6 +5,7 @@ const ADMIN_CODE = "1986";         // ניהול/דוחות מפורטים
 const MODE = "existing"; // "existing" | "sheets"
 const SHEET_ID = "";     // למצב "sheets": מזהה הגיליון
 const API_KEY  = "";     // למצב "sheets": Google API key
+const SCRIPT_URL = ""; // כתובת Web App לשמירת אירועים
 const RANGE    = "נוכחות!A1:F"; // למצב "sheets": טווח כולל כותרות
 
 /* ===== SPA Routes ===== */
@@ -333,3 +334,73 @@ function tryRegisterSW(){ if ('serviceWorker' in navigator) navigator.serviceWor
   }, 700);
 })();
 
+
+
+// ===== טופס אירוע: רשימת עובדים + תאריך ברירת מחדל =====
+async function rb_syncEventEmployees(){
+  var names = [];
+  if (Array.isArray(window.attendanceData)){
+    names = Array.from(new Set(window.attendanceData.map(r=>String((r["שם עובד"]||"").trim())).filter(Boolean)));
+  }
+  const fill = (selId)=>{
+    var sel = document.getElementById(selId); if(!sel) return;
+    var keep = sel.value;
+    sel.innerHTML = '<option value="">-- בחר עובד --</option>';
+    names.sort((a,b)=>a.localeCompare(b,'he'));
+    names.forEach(n=>{ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+    if (keep) sel.value = keep;
+  };
+  fill('eventEmployeeSelect');
+  fill('adminEventEmployee');
+}
+function rb_setEventDefaultDate(){
+  var today = (function(){ var d=new Date(); var m=String(d.getMonth()+1).padStart(2,'0'); var day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; })();
+  var el = document.getElementById('eventDate'); if (el) el.value = today;
+  var el2 = document.getElementById('adminEventDate'); if (el2) el2.value = today;
+}
+
+// ===== שליחת אירוע ל-Apps Script =====
+async function rb_postEvent(name, date, locationStr, note){
+  const msgFail = 'שגיאה בשמירה. בדוק חיבור/קונפיגורציה.';
+  try{
+    if (!name || !date || !locationStr) return {ok:false, msg:'יש למלא שם, תאריך ומיקום'};
+    if (!SCRIPT_URL){ return {ok:false, msg:'SCRIPT_URL חסר בהגדרות'}; }
+    const ts = new Date().toISOString();
+    const row = [name,'event',ts,date,'','PWA',note||'',locationStr];
+    const res = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values:[row] }) });
+    return {ok:res.ok, msg: res.ok ? 'האירוע נשמר' : msgFail};
+  }catch(e){ return {ok:false, msg:msgFail}; }
+}
+
+// ===== חיווט כפתורים =====
+function rb_wireEventForms(){
+  var b = document.getElementById('btnSaveEvent');
+  if (b) b.onclick = async function(){
+    var n = (document.getElementById('eventEmployeeSelect')||{}).value||'';
+    var d = (document.getElementById('eventDate')||{}).value||'';
+    var loc = (document.getElementById('eventLocation')||{}).value||'';
+    var note = (document.getElementById('eventNote')||{}).value||'';
+    var msgEl = document.getElementById('eventMsg');
+    var r = await rb_postEvent(n,d,loc,note);
+    if (msgEl) msgEl.textContent = r.msg;
+    if (r.ok){ (document.getElementById('eventLocation')||{}).value=''; (document.getElementById('eventNote')||{}).value=''; rb_setEventDefaultDate(); }
+  };
+  var b2 = document.getElementById('btnAdminAddEvent');
+  if (b2) b2.onclick = async function(){
+    var n = (document.getElementById('adminEventEmployee')||{}).value||'';
+    var d = (document.getElementById('adminEventDate')||{}).value||'';
+    var loc = (document.getElementById('adminEventLocation')||{}).value||'';
+    var note = (document.getElementById('adminEventNote')||{}).value||'';
+    var msgEl = document.getElementById('adminEventMsg');
+    var r = await rb_postEvent(n,d,loc,note);
+    if (msgEl) msgEl.textContent = r.msg;
+    if (r.ok){ (document.getElementById('adminEventLocation')||{}).value=''; (document.getElementById('adminEventNote')||{}).value=''; rb_setEventDefaultDate(); }
+  };
+}
+
+window.addEventListener('load', function(){ rb_syncEventEmployees(); rb_setEventDefaultDate(); rb_wireEventForms(); });
+window.addEventListener('hashchange', function(){ setTimeout(function(){ rb_syncEventEmployees(); rb_setEventDefaultDate(); rb_wireEventForms(); }, 200); });
+
+
+// הגנה: אירועים לא נספרים לשעות
+function isWorkAction(a){ a=String(a||'').toLowerCase(); return a==='checkin'||a==='checkout'; }

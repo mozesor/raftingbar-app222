@@ -659,6 +659,19 @@
 <div class="header">
 <h1>🏄‍♂️ רפטינג בר</h1>
 <div class="current-time" id="currentTime"></div>
+<div id="gate-overlay" style="display:none; position:fixed; inset:0; background: rgba(0,0,0,.6); z-index:10000; align-items:center; justify-content:center;">
+  <div class="card" style="max-width:360px; width:92vw;">
+    <h2 style="margin-top:0;">🔐 כניסה ראשונית</h2>
+    <p class="auth-hint">הכנס קוד גישה כדי להמשיך</p>
+    <input id="gate-input" type="password" class="auth-input" placeholder="*****" style="width:100%; margin:8px 0;">
+    <div style="display:flex; gap:10px;">
+      <button id="gate-ok" class="btn btn-admin" style="flex:1;">אישור</button>
+      <button id="gate-cancel" class="btn" style="flex:1; background:#e0e0e0;">ביטול</button>
+    </div>
+    <div id="gate-msg" class="auth-hint" style="margin-top:8px;"></div>
+  </div>
+</div>
+
 <div class="sync-status" id="syncStatus">
 <span id="syncIcon">🔄</span>
 <span id="syncText">מתחבר...</span>
@@ -714,12 +727,34 @@
 <div class="page" id="employeesPage">
 <div class="card">
 <h2>👥 סטטוס עובדים</h2>
-<div class="employee-grid" id="employeeGrid"></div>
+<div class="employee-grid" id="employeeGrid">
+<div class="card" id="eventReportCard" style="margin-top:12px;">
+  <h2>📌 דיווח אירוע</h2>
+  <div class="form-group">
+    <label>שם עובד:</label>
+    <select id="eventEmployeeSelect"><option value="">-- בחר עובד --</option></select>
+  </div>
+  <div class="form-group">
+    <label>תאריך אירוע:</label>
+    <input type="date" id="eventDate">
+  </div>
+  <div class="form-group">
+    <label>מיקום האירוע:</label>
+    <input type="text" id="eventLocation" placeholder="לדוגמה: תל אביב, פארק הירקון">
+  </div>
+  <div class="form-group">
+    <label>הערה (לא חובה):</label>
+    <input type="text" id="eventNote" placeholder="פרטים קצרים (אם צריך)">
+  </div>
+  <button class="btn btn-admin" id="btnSaveEvent" style="width:100%;">שמור אירוע</button>
+  <div id="eventMsg" class="auth-hint" style="margin-top:8px;"></div>
+</div>
+</div>
 </div>
 </div>
 <!-- עמוד דוחות -->
 <div class="page" id="reportsPage">
-<div class="card" id="reportsLock" style="display: block;">
+<div class="card" id="reportsLock" style="display: none;">
 <h2>🔒 דוחות מוגנים</h2>
 <p style="text-align: center; color: #666; margin-bottom: 20px;">
             הזן קוד גישה לצפייה בדוחות
@@ -730,7 +765,7 @@
 </div>
 <button class="btn btn-admin" onclick="checkReportsPassword()" style="width: 100%;">🔓 פתח דוחות</button>
 </div>
-<div class="card" id="reportsContent" style="display: none;">
+<div class="card" id="reportsContent" style="display: block;">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
 <h2 style="margin:0;">📊 דוחות</h2>
 <button class="btn" onclick="lockReports()" style="background:#f44336;color:#fff;padding:8px 12px;font-size:14px;">🔒 נעל</button>
@@ -918,6 +953,22 @@
 </div>
 </div>
 </div>
+</div>
+
+<div class="card" id="adminAddEventCard">
+  <h2>📅 הוסף אירוע מהעבר</h2>
+  <div class="form-group"><label>עובד:</label><select id="adminEventEmployee"><option value="">-- בחר עובד --</option></select></div>
+  <div class="filter-row">
+    <div class="filter-group">
+      <label>תאריך:</label><input type="date" id="adminEventDate">
+    </div>
+    <div class="filter-group">
+      <label>מיקום:</label><input type="text" id="adminEventLocation" placeholder="מיקום האירוע">
+    </div>
+  </div>
+  <div class="form-group"><label>הערה (לא חובה):</label><input type="text" id="adminEventNote"></div>
+  <button class="btn btn-admin" id="btnAdminAddEvent" style="width:100%;">➕ הוסף אירוע</button>
+  <div id="adminEventMsg" class="auth-hint" style="margin-top:8px;"></div>
 </div>
 <!-- ניווט תחתון -->
 <div class="navigation">
