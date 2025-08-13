@@ -1768,6 +1768,7 @@
                     var dateKey = dateStrings[d];
                     var dayData = attendanceData[employee] && attendanceData[employee][dateKey];
                     
+                    if (dayData && dayData.events) { dayEvents += (dayData.events||0); }
                     if (dayData && dayData.checkIn && dayData.checkOut) {
                         var hours = calculateHours(dayData.checkIn, dayData.checkOut);
                         row.push(hours + ' שעות');
@@ -1979,6 +1980,7 @@
         function generateDetailedReportData(startDate, endDate, selectedEmployee) {
             var data = {
                 totalHours: 0,
+                totalEvents: 0,
                 totalDays: 0,
                 overtimeDays: 0,
                 overtimeHours: 0,
@@ -2000,6 +2002,8 @@
                 var employee = employeeList[e];
                 var employeeData = {
                     name: employee,
+                    totalEvents: 0,
+                    eventDates: [],
                     totalHours: 0,
                     workDays: 0,
                     overtimeDays: 0,
@@ -2012,6 +2016,9 @@
                     var dateStr = dates[d];
                     var dayData = attendanceData[employee] && attendanceData[employee][dateStr];
                     
+                    if (dayData && dayData.events){ employeeData.totalEvents += (dayData.events||0); employeeData.eventDates.push({date: dateStr, count: dayData.events}); }
+                    
+                    if (dayData && dayData.events) { dayEvents += (dayData.events||0); }
                     if (dayData && dayData.checkIn && dayData.checkOut) {
                         var hours = calculateHours(dayData.checkIn, dayData.checkOut);
                         employeeData.totalHours += hours;
@@ -2039,6 +2046,7 @@
                 data.employees.push(employeeData);
                 data.totalHours += employeeData.totalHours;
                 data.totalDays += employeeData.workDays;
+                data.totalEvents += employeeData.totalEvents;
                 data.overtimeDays += employeeData.overtimeDays;
                 data.overtimeHours += employeeData.overtimeHours;
                 data.missingDays += employeeData.missingDays;
@@ -2051,11 +2059,13 @@
             for (var d = 0; d < dates.length; d++) {
                 var dateStr = dates[d];
                 var dayTotal = 0;
+                var dayEvents = 0;
                 var dayWorkers = 0;
                 
                 for (var e = 0; e < employeeList.length; e++) {
                     var employee = employeeList[e];
                     var dayData = attendanceData[employee] && attendanceData[employee][dateStr];
+                    if (dayData && dayData.events) { dayEvents += (dayData.events||0); }
                     if (dayData && dayData.checkIn && dayData.checkOut) {
                         dayTotal += calculateHours(dayData.checkIn, dayData.checkOut);
                         dayWorkers++;
@@ -2066,7 +2076,8 @@
                     date: dateStr,
                     totalHours: dayTotal,
                     workers: dayWorkers,
-                    average: dayWorkers > 0 ? Math.round((dayTotal / dayWorkers) * 100) / 100 : 0
+                    average: dayWorkers > 0 ? Math.round((dayTotal / dayWorkers) * 100) / 100 : 0,
+                    events: dayEvents
                 });
             }
 
@@ -2108,6 +2119,10 @@
                 '<div class="stat-card">' +
                     '<div class="stat-value">' + data.missingDays + '</div>' +
                     '<div class="stat-label">ימים לא נסגרו</div>' +
+                '</div>' +
+                '<div class="stat-card">' +
+                    '<div class="stat-value">' + data.totalEvents + '</div>' +
+                    '<div class="stat-label">סה\'כ אירועים</div>' +
                 '</div>';
         }
 
@@ -2893,6 +2908,12 @@
 
 /* === RB PATCH: Events + Self Report + Auth Enforcement === */
 
+function setEventDateDefault(){
+  var inp = document.getElementById('eventDate');
+  if (inp && !inp.value) { inp.value = getCurrentDate(); }
+}
+
+
     function getOrCreateDay(employee, dateKey) {
 
       attendanceData[employee] = attendanceData[employee] || {};
@@ -3025,7 +3046,7 @@
 
       var _u = updateAll;
 
-      updateAll = function(){ _u(); updateTodayEventsUI(); fillSelfReportEmployees(); };
+      updateAll = function(){ _u(); updateTodayEventsUI(); fillSelfReportEmployees(); setEventDateDefault(); };
 
     })();
 
@@ -3073,6 +3094,12 @@
 
     })();
 
+
+
+// Prevent interacting with the app while overlay visible
+function authOverlayVisible(){ var ov=document.getElementById('authOverlay'); return ov && ov.style.display !== 'none'; }
+function authBlocker(e){ if (authOverlayVisible()) { var card=document.querySelector('.auth-card'); if (card && !card.contains(e.target)) { e.stopPropagation(); e.preventDefault(); } } }
+document.addEventListener('click', authBlocker, true);
 
 </script>
 </body>
