@@ -1571,7 +1571,6 @@
 
         // ניווט
         function showPage(pageName) {
-            if (!localStorage.getItem('rb_is_authed')) { var ov=document.getElementById('authOverlay'); if (ov) { ov.style.display='flex'; } return; }
             document.querySelectorAll('.page').forEach(function(page) {
                 page.classList.remove('active');
             });
@@ -3131,6 +3130,58 @@ function setEventDateDefault(){
 function authOverlayVisible(){ var ov=document.getElementById('authOverlay'); return ov && ov.style.display !== 'none'; }
 function authBlocker(e){ if (authOverlayVisible()) { var card=document.querySelector('.auth-card'); if (card && !card.contains(e.target)) { e.stopPropagation(); e.preventDefault(); } } }
 document.addEventListener('click', authBlocker, true);
+
+
+/* === RB PATCH: DISABLE ALL PASSWORDS / LOCKS === */
+(function removeAllLocks(){
+  try {
+    // mark as authed and hide overlay
+    localStorage.setItem('rb_is_authed','1');
+    var ov = document.getElementById('authOverlay');
+    if (ov) ov.style.display = 'none';
+
+    // unlock admin
+    isAdminUnlocked = true;
+    var adminLock = document.getElementById('adminLock');
+    var adminContent = document.getElementById('adminContent');
+    if (adminLock) adminLock.style.display = 'none';
+    if (adminContent) adminContent.style.display = 'block';
+
+    // unlock detailed reports
+    isDetailedReportsUnlocked = true;
+    var drLock = document.getElementById('detailedReportsLock');
+    var drContent = document.getElementById('detailedReportsContent');
+    if (drLock) drLock.style.display = 'none';
+    if (drContent) drContent.style.display = 'block';
+
+    // unlock reports (ensure page visible)
+    var reportsLock = document.getElementById('reportsLock');
+    var reportsContent = document.getElementById('reportsContent');
+    if (reportsLock) reportsLock.style.display = 'none';
+    if (reportsContent) reportsContent.style.display = 'block';
+
+    // override gate functions to no-ops that always succeed
+    window.checkAdminPassword = function(){ isAdminUnlocked = true; if (adminLock) adminLock.style.display='none'; if (adminContent) adminContent.style.display='block'; showAlert('כניסה לניהול הופעלה (ללא סיסמה)', 'success'); };
+    window.lockAdmin = function(){ isAdminUnlocked = true; if (adminLock) adminLock.style.display='none'; if (adminContent) adminContent.style.display='block'; };
+    window.checkDetailedReportsPassword = function(){ isDetailedReportsUnlocked=true; if (drLock) drLock.style.display='none'; if (drContent) drContent.style.display='block'; showAlert('דוחות מפורטים פתוחים (ללא סיסמה)', 'success'); };
+    window.lockDetailedReports = function(){ isDetailedReportsUnlocked=true; if (drLock) drLock.style.display='none'; if (drContent) drContent.style.display='block'; };
+    window.checkReportsPassword = function(){ if (reportsLock) reportsLock.style.display='none'; if (reportsContent) reportsContent.style.display='block'; showAlert('דוחות נפתחו (ללא סיסמה)', 'success'); };
+    window.lockReports = function(){ if (reportsLock) reportsLock.style.display='none'; if (reportsContent) reportsContent.style.display='block'; };
+
+    // allow navigation even if some old guards exist
+    var _showPage = window.showPage;
+    window.showPage = function(pageName){
+      try{
+        // force relevant content visible
+        if (pageName==='admin'){ if (adminLock) adminLock.style.display='none'; if (adminContent) adminContent.style.display='block'; }
+        if (pageName==='detailedReports'){ if (drLock) drLock.style.display='none'; if (drContent) drContent.style.display='block'; }
+        if (pageName==='reports'){ if (reportsLock) reportsLock.style.display='none'; if (reportsContent) reportsContent.style.display='block'; }
+      }catch(e){}
+      return _showPage ? _showPage(pageName) : null;
+    };
+
+  } catch(e) { console.log('removeAllLocks error', e); }
+})();
 
 </script>
 </body>
