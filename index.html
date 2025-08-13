@@ -824,6 +824,12 @@
 <!-- יתמלא באופן דינמי -->
 </div>
 <!-- גרף שעות יומיות -->
+<div class="card" id="detailedEventsListContainer" style="margin-bottom: 20px;">
+  <h3 style="margin-bottom: 10px;">📅 אירועים לפי תאריך</h3>
+  <div id="detailedEventsList" style="max-height:220px; overflow:auto; font-size:14px; color:#333;">
+    <!-- יתמלא דינמית -->
+  </div>
+</div>
 <div class="chart-container">
 <h3 style="margin-bottom: 15px;">📊 שעות יומיות</h3>
 <div id="detailedHoursChart">
@@ -1565,6 +1571,7 @@
 
         // ניווט
         function showPage(pageName) {
+            if (!localStorage.getItem('rb_is_authed')) { var ov=document.getElementById('authOverlay'); if (ov) { ov.style.display='flex'; } return; }
             document.querySelectorAll('.page').forEach(function(page) {
                 page.classList.remove('active');
             });
@@ -1976,6 +1983,7 @@
             
             updateDetailedStatsGrid(reportData);
             updateDetailedHoursChart(reportData);
+            updateDetailedEventsList(reportData);
             updateDetailedReportsTable(reportData);
         }
 
@@ -2128,7 +2136,28 @@
                 '</div>';
         }
 
-        function updateDetailedHoursChart(data) {
+        
+function updateDetailedEventsList(data){
+  var box = document.getElementById('detailedEventsList');
+  if (!box) return;
+  var emp = document.getElementById('detailedEmployeeFilter').value;
+  var html = '';
+  if (emp !== 'all'){
+    var e = (data.employees || []).find(function(x){ return x.name === emp; });
+    if (!e || !e.eventDates || e.eventDates.length===0){ box.innerHTML = '<p style="color:#666;text-align:center;">אין אירועים בתקופה</p>'; return; }
+    e.eventDates.sort(function(a,b){ return a.date.localeCompare(b.date); });
+    html = e.eventDates.map(function(it){ var d = new Date(it.date); var dd = d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear(); return '<div>• '+dd+' — '+it.count+' אירוע(ים)</div>'; }).join('');
+  } else {
+    var byDate = {};
+    (data.employees||[]).forEach(function(e){ (e.eventDates||[]).forEach(function(it){ byDate[it.date]=(byDate[it.date]||0)+it.count; }); });
+    var keys = Object.keys(byDate).sort();
+    if (keys.length===0){ box.innerHTML = '<p style="color:#666;text-align:center;">אין אירועים בתקופה</p>'; return; }
+    html = keys.map(function(k){ var d=new Date(k); var dd=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear(); return '<div>• '+dd+' — '+byDate[k]+' אירוע(ים)</div>'; }).join('');
+  }
+  box.innerHTML = html;
+}
+
+function updateDetailedHoursChart(data) {
             var chartDiv = document.getElementById('detailedHoursChart');
             if (!chartDiv) return;
             
