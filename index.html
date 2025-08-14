@@ -663,7 +663,7 @@
 <span id="syncIcon">🔄</span>
 <span id="syncText">מתחבר...</span>
 </div>
-</div><div class="auth-overlay" id="authOverlay" style="display:none">
+</div><div class="auth-overlay" id="authOverlay">
 <div class="auth-card">
 <h2>🔐 כניסה</h2>
 <p class="auth-hint">קבל/י את קוד הגישה מהמנהל</p>
@@ -698,26 +698,12 @@
 <h3>מצב נוכחי</h3>
 <div id="employeeStatus">בחר עובד לצפייה במצב</div>
 </div>
-
-<div class="card" id="eventsCard" style="margin-top:10px;">
-  <h2>➕ אירוע</h2>
-  <div class="form-group">
-    <label>תאריך האירוע:</label>
-    <input type="date" id="eventDate">
-  </div>
-  <div class="btn-group">
-    <button class="btn btn-admin" onclick="addEventForEmployee()">הוסף אירוע</button>
-  </div>
-  <div class="status-display">
-    <div>סה״כ אירועים היום לעובד: <strong id="todayEventsCount">0</strong></div>
-  </div>
-</div>
 <div class="quick-actions">
 <div class="quick-action" onclick="showEmployeesStatus()">
 <div class="quick-action-value" id="activeCount">0</div>
 <div class="quick-action-label">עובדים פעילים</div>
 </div>
-<div class="quick-action" onclick="showPage('self')">
+<div class="quick-action" onclick="showPage('reports')">
 <div class="quick-action-value" id="todayHours">0</div>
 <div class="quick-action-label">שעות היום</div>
 </div>
@@ -731,37 +717,34 @@
 <div class="employee-grid" id="employeeGrid"></div>
 </div>
 </div>
+<!-- עמוד דוחות -->
+<div class="page" id="reportsPage">
+<div class="card" id="reportsLock" style="display: block;">
+<h2>🔒 דוחות מוגנים</h2>
+<p style="text-align: center; color: #666; margin-bottom: 20px;">
+            הזן קוד גישה לצפייה בדוחות
+          </p>
+<div class="form-group">
+<label>קוד גישה:</label>
+<input id="reportsPassword" maxlength="6" placeholder="הזן קוד גישה" type="password"/>
+</div>
 <button class="btn btn-admin" onclick="checkReportsPassword()" style="width: 100%;">🔓 פתח דוחות</button>
 </div>
-
+<div class="card" id="reportsContent" style="display: none;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+<h2 style="margin:0;">📊 דוחות</h2>
+<button class="btn" onclick="lockReports()" style="background:#f44336;color:#fff;padding:8px 12px;font-size:14px;">🔒 נעל</button>
 </div>
-
-<!-- עמוד דוח אישי -->
-<div class="page" id="selfPage">
-  <div class="card">
-    <h2>👤 דוח אישי לעובד</h2>
-    <div class="form-group">
-      <label>בחר עובד:</label>
-      <select id="selfEmployee"></select>
-    </div>
-    <div class="form-group">
-      <label>תקופה:</label>
-      <select id="selfPeriod">
-        <option value="month" selected>החודש</option>
-        <option value="week">השבוע</option>
-        <option value="today">היום</option>
-      </select>
-    </div>
-    <button class="btn btn-admin" style="width:100%;" onclick="renderSelf()">הצג דוח</button>
-    <div class="detailed-reports-table" style="margin-top:12px;">
-      <table class="data-table" id="selfTable"></table>
-    </div>
-  </div>
+<div class="btn-group" style="flex-direction: column;">
+<button class="btn btn-admin" onclick="exportToday()">📄 ייצא דוח יומי</button>
+<button class="btn btn-admin" onclick="exportDetailed()">📊 ייצא דוח מפורט</button>
+</div>
+</div>
 </div>
 <!-- עמוד דוחות מפורטים -->
 <div class="page" id="detailedReportsPage">
 <!-- מסך נעילה -->
-<div class="card" id="detailedReportsLock" style="display:none" style="display: block;">
+<div class="card" id="detailedReportsLock" style="display: block;">
 <h2>🔒 דוחות מפורטים מוגנים</h2>
 <p style="text-align: center; color: #666; margin-bottom: 20px;">
                     הזן קוד גישה לצפייה בדוחות המפורטים
@@ -779,7 +762,7 @@
                 </div>
 </div>
 <!-- תוכן הדוחות המפורטים -->
-<div id="detailedReportsContent" style="display: block;">
+<div id="detailedReportsContent" style="display: none;">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
 <h2 style="margin: 0;">📊 דוחות מפורטים</h2>
 <button class="btn" onclick="lockDetailedReports()" style="background: #f44336; color: white; padding: 8px 12px; font-size: 14px;">
@@ -862,7 +845,7 @@
 <!-- עמוד ניהול -->
 <div class="page" id="adminPage">
 <!-- מסך נעילה -->
-<div class="card" id="adminLock" style="display:none" style="display: block;">
+<div class="card" id="adminLock" style="display: none;">
 <h2>🔒 עמוד ניהול מוגן</h2>
 <p style="text-align: center; color: #666; margin-bottom: 20px;">
                     הזן קוד גישה לניהול המערכת
@@ -911,6 +894,28 @@
                         🔄 איפוס נתונים
                     </button>
 </div>
+<div class="card" id="adminAddEventCard" style="margin-top: 12px;">
+  <h2>➕ הוספת אירוע רטרואקטיבית</h2>
+  <div class="form-group">
+    <label>עובד:</label>
+    <select id="adminEventEmployee"></select>
+  </div>
+  <div class="form-group">
+    <label>תאריך האירוע:</label>
+    <input type="date" id="adminEventDate">
+  </div>
+  <div class="form-group">
+    <label>כמות אירועים:</label>
+    <input type="number" id="adminEventCount" min="1" value="1" step="1">
+  </div>
+  <div class="form-group">
+    <label>הערה (לא חובה):</label>
+    <input type="text" id="adminEventNote" placeholder="סיבת האירוע / הערה">
+  </div>
+  <button class="btn btn-admin" style="width:100%;" onclick="adminAddEvent()">הוסף אירוע</button>
+  <div style="margin-top:10px; font-size: 12px; color:#555;">* הפעולה תירשם גם בגיליון (שורת <code>event</code> לכל אירוע).</div>
+</div>
+
 <div class="card">
 <h2>🔄 סנכרון</h2>
 <p style="text-align: center; color: #666; margin-bottom: 15px;">
@@ -946,7 +951,7 @@
 <div>👥</div>
 <div>עובדים</div>
 </button>
-<button class="nav-btn" onclick="showPage('self')">
+<button class="nav-btn" onclick="showPage('reports')">
 <div>📊</div>
 <div>דוחות</div>
 </button>
@@ -1122,9 +1127,7 @@
                                 newAttendanceData[employee][date] = {};
                             }
                             
-                            if (action === 'event') {
-                                newAttendanceData[employee][date].events = (newAttendanceData[employee][date].events || 0) + 1;
-                            } else if (action === 'checkin') {
+                            if (action === 'checkin') {
                                 newAttendanceData[employee][date].checkIn = timestamp;
                                 if (date === currentDate) {
                                     newCurrentStatus[employee] = 'in';
@@ -1981,8 +1984,6 @@
         function generateDetailedReportData(startDate, endDate, selectedEmployee) {
             var data = {
                 totalHours: 0,
-                totalEvents: 0,
-                eventsByDate: {},
                 totalDays: 0,
                 overtimeDays: 0,
                 overtimeHours: 0,
@@ -2004,8 +2005,6 @@
                 var employee = employeeList[e];
                 var employeeData = {
                     name: employee,
-                    totalEvents: 0,
-                    eventDates: [],
                     totalHours: 0,
                     workDays: 0,
                     overtimeDays: 0,
@@ -2017,7 +2016,6 @@
                 for (var d = 0; d < dates.length; d++) {
                     var dateStr = dates[d];
                     var dayData = attendanceData[employee] && attendanceData[employee][dateStr];
-                    if (dayData && dayData.events){ employeeData.totalEvents += (dayData.events||0); data.totalEvents = (data.totalEvents||0) + (dayData.events||0); employeeData.eventDates.push({date: dateStr, count: dayData.events}); }
                     
                     if (dayData && dayData.checkIn && dayData.checkOut) {
                         var hours = calculateHours(dayData.checkIn, dayData.checkOut);
@@ -2063,7 +2061,6 @@
                 for (var e = 0; e < employeeList.length; e++) {
                     var employee = employeeList[e];
                     var dayData = attendanceData[employee] && attendanceData[employee][dateStr];
-                    if (dayData && dayData.events){ employeeData.totalEvents += (dayData.events||0); data.totalEvents = (data.totalEvents||0) + (dayData.events||0); employeeData.eventDates.push({date: dateStr, count: dayData.events}); }
                     if (dayData && dayData.checkIn && dayData.checkOut) {
                         dayTotal += calculateHours(dayData.checkIn, dayData.checkOut);
                         dayWorkers++;
@@ -2292,8 +2289,6 @@
                 ['ימי שעות נוספות', reportData.overtimeDays],
                 ['ימים לא נסגרו', reportData.missingDays],
                 ['מספר עובדים', reportData.employees.length],
-                ['סה\'כ אירועים', (reportData.totalEvents||0)],
-                ['סה\'כ אירועים', reportData.totalEvents],
                 [''],
                 ['עובד מצטיין (הכי הרבה שעות)', ''],
                 ['עובד מצטיין (הכי יציב)', '']
@@ -2900,81 +2895,42 @@
 })();
 
 
-/*** Self Report Page ***/
-function selfDateRange(period){
-  var end = new Date(); end.setHours(23,59,59,999);
-  var start = new Date(end);
-  if (period === 'today') start = new Date(end.getFullYear(), end.getMonth(), end.getDate(),0,0,0,0);
-  else if (period === 'week') start.setDate(end.getDate() - 6);
-  else start = new Date(end.getFullYear(), end.getMonth(), 1,0,0,0,0);
-  return {start:start, end:end};
+/*** ADMIN: Add past events ***/
+function fillAdminEventEmployees(){
+  var sel = document.getElementById('adminEventEmployee');
+  if (!sel) return;
+  var cur = sel.value;
+  sel.innerHTML = '';
+  (employees || []).forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+  if (cur) sel.value = cur;
 }
-function fillSelfEmployees(){
-  var sel = document.getElementById('selfEmployee');
-  if(!sel) return;
-  var keep = sel.value;
-  sel.innerHTML='';
-  employees.forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
-  if(keep) sel.value = keep;
+function adminEventDefaults(){
+  var d = document.getElementById('adminEventDate');
+  if (d && !d.value){ d.value = getCurrentDate(); }
+  fillAdminEventEmployees();
 }
-function renderSelf(){
-  var emp = (document.getElementById('selfEmployee')||{}).value;
-  if(!emp){ showAlert('בחר עובד', 'error'); return; }
-  var period = (document.getElementById('selfPeriod')||{}).value || 'month';
-  var rng = selfDateRange(period);
-  var rows = [['תאריך','כניסה','יציאה','שעות','אירועים']];
-  var days=0, total=0, eventsTotal=0;
-  for (var d=new Date(rng.start); d<=rng.end; d.setDate(d.getDate()+1)){
-    var y=d.getFullYear(), m=(''+(d.getMonth()+1)).padStart(2,'0'), da=(''+d.getDate()).padStart(2,'0');
-    var key=y+'-'+m+'-'+da;
-    var day=attendanceData[emp] && attendanceData[emp][key];
-    if(!day) continue;
-    var hours=0; if(day.checkIn) hours = calculateHours(day.checkIn, day.checkOut||null);
-    if(day.checkIn || day.checkOut){ days++; total+=hours; }
-    var ev = day.events || 0; eventsTotal += ev;
-    rows.push([da+'/'+(d.getMonth()+1), day.checkIn?formatTime(day.checkIn):'-', day.checkOut?formatTime(day.checkOut):'-', hours||0, ev]);
-  }
-  rows.unshift(['ימי עבודה: '+days, '', 'סה״כ שעות: '+(Math.round(total*10)/10), '', 'סה״כ אירועים: '+eventsTotal]);
-  var table = document.getElementById('selfTable');
-  var htmlRows = rows.map(function(r,i){ var tag = i===0?'th':'td'; return '<tr>'+r.map(function(c){ return '<'+tag+'>'+c+'</'+tag+'>';}).join('')+'</tr>'; }).join('');
-  table.innerHTML = htmlRows;
-}
-(function(){ var _u = updateAll; updateAll = function(){ _u(); fillSelfEmployees(); }; })();
-
-
-/* === EVENTS: add per day + UI counters === */
-function getOrCreateDay(employee, dateKey) {
-  attendanceData[employee] = attendanceData[employee] || {};
-  attendanceData[employee][dateKey] = attendanceData[employee][dateKey] || {};
-  return attendanceData[employee][dateKey];
-}
-function addEventForEmployee() {
-  var employee = document.getElementById('employeeSelect') && document.getElementById('employeeSelect').value;
-  if (!employee) { showAlert('אנא בחר עובד', 'error'); return; }
-  var dateKey = (document.getElementById('eventDate') && document.getElementById('eventDate').value) || getCurrentDate();
-  var day = getOrCreateDay(employee, dateKey);
-  day.events = (day.events || 0) + 1;
+function adminAddEvent(){
+  var empSel = document.getElementById('adminEventEmployee');
+  var emp = empSel && empSel.value;
+  if (!emp){ showAlert('בחר עובד', 'error'); return; }
+  var dateKey = (document.getElementById('adminEventDate')||{}).value || getCurrentDate();
+  var count = parseInt((document.getElementById('adminEventCount')||{}).value || '1', 10);
+  if (!(count>0)) { showAlert('כמות אירועים חייבת להיות 1 או יותר', 'error'); return; }
+  attendanceData[emp] = attendanceData[emp] || {};
+  attendanceData[emp][dateKey] = attendanceData[emp][dateKey] || {};
+  attendanceData[emp][dateKey].events = (attendanceData[emp][dateKey].events || 0) + count;
   saveLocalData && saveLocalData();
   updateAll && updateAll();
-  showAlert('נוסף אירוע ל-' + employee + ' בתאריך ' + dateKey, 'success');
-  if (isInitialized && typeof recordToSheet === 'function') {
+  showAlert('נוספו ' + count + ' אירועים ל-' + emp + ' בתאריך ' + dateKey, 'success');
+  if (isInitialized && typeof recordToSheet === 'function'){
     var now = new Date();
-    recordToSheet(employee, 'event', now.toISOString(), dateKey, now.toLocaleTimeString('he-IL'));
+    for (var i=0;i<count;i++){
+      var stamp = new Date(now.getTime() + i*1000).toISOString();
+      recordToSheet(emp, 'event', stamp, dateKey, now.toLocaleTimeString('he-IL'));
+    }
   }
 }
-function updateTodayEventsUI() {
-  var el = document.getElementById('todayEventsCount');
-  if (!el) return;
-  var employee = document.getElementById('employeeSelect') && document.getElementById('employeeSelect').value;
-  if (!employee) { el.textContent = '0'; return; }
-  var day = attendanceData[employee] && attendanceData[employee][getCurrentDate()];
-  el.textContent = day && day.events ? day.events : 0;
-}
-function setEventDateDefault(){
-  var inp = document.getElementById('eventDate');
-  if (inp && !inp.value) { inp.value = getCurrentDate(); }
-}
-(function(){ var _u = updateAll; updateAll = function(){ _u(); updateTodayEventsUI(); setEventDateDefault(); }; })();
+(function(){ var _u = updateAll; updateAll = function(){ _u(); adminEventDefaults(); }; })();
 
 </script>
 </body>
