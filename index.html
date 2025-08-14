@@ -709,6 +709,20 @@
 </div>
 </div>
 </div>
+<div class="card" style="margin-top:10px;">
+  <h2>➕ אירוע</h2>
+  <div class="form-group">
+    <label>תאריך האירוע:</label>
+    <input type="date" id="eventDate">
+  </div>
+  <div class="btn-group">
+    <button class="btn btn-admin" onclick="addEventForEmployee()">הוסף אירוע</button>
+  </div>
+  <div class="status-display">
+    <div>סה״כ אירועים היום לעובד: <strong id="todayEventsCount">0</strong></div>
+  </div>
+</div>
+
 </div>
 <!-- עמוד עובדים -->
 <div class="page" id="employeesPage">
@@ -719,27 +733,30 @@
 </div>
 <!-- עמוד דוחות -->
 <div class="page" id="reportsPage">
-<div class="card" id="reportsLock" style="display: block;">
-<h2>🔒 דוחות מוגנים</h2>
-<p style="text-align: center; color: #666; margin-bottom: 20px;">
-            הזן קוד גישה לצפייה בדוחות
-          </p>
-<div class="form-group">
-<label>קוד גישה:</label>
-<input id="reportsPassword" maxlength="6" placeholder="הזן קוד גישה" type="password"/>
+
+<!-- עמוד דוחות -->
+<div class="page" id="reportsPage">
+  <div class="card">
+    <h2>👤 דוח אישי לעובד</h2>
+    <div class="form-group">
+      <label>בחר עובד:</label>
+      <select id="selfReportEmployee"></select>
+    </div>
+    <div class="form-group">
+      <label>תקופה:</label>
+      <select id="selfReportPeriod">
+        <option value="month" selected>החודש</option>
+        <option value="week">השבוע</option>
+        <option value="today">היום</option>
+      </select>
+    </div>
+    <button class="btn btn-admin" style="width:100%;" onclick="renderSelfReport()">הצג דוח</button>
+    <div class="detailed-reports-table" style="margin-top:12px;">
+      <table class="data-table" id="selfReportTable"></table>
+    </div>
+  </div>
 </div>
-<button class="btn btn-admin" onclick="checkReportsPassword()" style="width: 100%;">🔓 פתח דוחות</button>
-</div>
-<div class="card" id="reportsContent" style="display: none;">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-<h2 style="margin:0;">📊 דוחות</h2>
-<button class="btn" onclick="lockReports()" style="background:#f44336;color:#fff;padding:8px 12px;font-size:14px;">🔒 נעל</button>
-</div>
-<div class="btn-group" style="flex-direction: column;">
-<button class="btn btn-admin" onclick="exportToday()">📄 ייצא דוח יומי</button>
-<button class="btn btn-admin" onclick="exportDetailed()">📊 ייצא דוח מפורט</button>
-</div>
-</div>
+<!-- עמוד דוחות מפורטים -->
 </div>
 <!-- עמוד דוחות מפורטים -->
 <div class="page" id="detailedReportsPage">
@@ -2871,6 +2888,191 @@
   });
   obs.observe(document.documentElement, { childList: true, subtree: true });
 })();
+
+
+
+/* === RB PATCH: Events + Self Report + Auth Enforcement === */
+
+    function getOrCreateDay(employee, dateKey) {
+
+      attendanceData[employee] = attendanceData[employee] || {};
+
+      attendanceData[employee][dateKey] = attendanceData[employee][dateKey] || {};
+
+      return attendanceData[employee][dateKey];
+
+    }
+
+    function addEventForEmployee() {
+
+      var employee = document.getElementById('employeeSelect').value;
+
+      if (!employee) { showAlert('אנא בחר עובד', 'error'); return; }
+
+      var dateKey = document.getElementById('eventDate') && document.getElementById('eventDate').value || getCurrentDate();
+
+      var day = getOrCreateDay(employee, dateKey);
+
+      day.events = (day.events || 0) + 1;
+
+      saveLocalData && saveLocalData();
+
+      updateAll && updateAll();
+
+      showAlert('נוסף אירוע ל-' + employee + ' בתאריך ' + dateKey, 'success');
+
+      if (isInitialized) {
+
+        var now = new Date();
+
+        recordToSheet(employee, 'event', now.toISOString(), dateKey, now.toLocaleTimeString('he-IL'));
+
+      }
+
+    }
+
+    function updateTodayEventsUI() {
+
+      var el = document.getElementById('todayEventsCount');
+
+      if (!el) return;
+
+      var employee = document.getElementById('employeeSelect').value;
+
+      if (!employee) { el.textContent = '0'; return; }
+
+      var day = attendanceData[employee] && attendanceData[employee][getCurrentDate()];
+
+      el.textContent = day && day.events ? day.events : 0;
+
+    }
+
+    function fillSelfReportEmployees() {
+
+      var sel = document.getElementById('selfReportEmployee');
+
+      if (!sel) return;
+
+      var cur = sel.value;
+
+      sel.innerHTML = '';
+
+      employees.forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+
+      if (cur) sel.value = cur;
+
+    }
+
+    function dateRangeFor(period) {
+
+      var end = new Date(); end.setHours(23,59,59,999);
+
+      var start = new Date(end);
+
+      if (period === 'today') start = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 0,0,0,0);
+
+      else if (period === 'week') start.setDate(end.getDate() - 6);
+
+      else start = new Date(end.getFullYear(), end.getMonth(), 1, 0,0,0,0);
+
+      return { start: start, end: end };
+
+    }
+
+    function renderSelfReport() {
+
+      var empSel = document.getElementById('selfReportEmployee');
+
+      if (!empSel || !empSel.value) { showAlert('בחר עובד', 'error'); return; }
+
+      var emp = empSel.value;
+
+      var period = document.getElementById('selfReportPeriod').value;
+
+      var rng = dateRangeFor(period);
+
+      var table = document.getElementById('selfReportTable');
+
+      var rows = [['תאריך','כניסה','יציאה','שעות','אירועים']];
+
+      var daysWorked = 0, totalHours = 0;
+
+      for (var d=new Date(rng.start); d<=rng.end; d.setDate(d.getDate()+1)){
+
+        var y=d.getFullYear(), m=(''+(d.getMonth()+1)).padStart(2,'0'), da=(''+d.getDate()).padStart(2,'0');
+
+        var key=y+'-'+m+'-'+da; var day=attendanceData[emp] && attendanceData[emp][key];
+
+        if(!day) continue; var hours=0; if(day.checkIn) hours = calculateHours(day.checkIn, day.checkOut||null);
+
+        if(day.checkIn || day.checkOut){ daysWorked++; totalHours += hours; }
+
+        rows.push([ da+'/'+(d.getMonth()+1), day.checkIn?formatTime(day.checkIn):'-', day.checkOut?formatTime(day.checkOut):'-', hours||0, (day.events||0) ]);
+
+      }
+
+      rows.unshift(['ימי עבודה: '+daysWorked,'','סה״כ שעות: '+(Math.round(totalHours*10)/10),'','']);
+
+      var html = rows.map(function(r,i){ var tag=i===0?'th':'td'; return '<tr>'+r.map(function(c){return '<'+tag+'>'+c+'</'+tag+'>';}).join('')+'</tr>'; }).join('');
+
+      table.innerHTML = html;
+
+    }
+
+    // Hook updateAll to refresh events count & employee list
+
+    (function(){
+
+      var _u = updateAll;
+
+      updateAll = function(){ _u(); updateTodayEventsUI(); fillSelfReportEmployees(); };
+
+    })();
+
+    // Enforce auth on first load; Cancel won't dismiss
+
+    (function enforceAuth(){
+
+      var overlay=document.getElementById('authOverlay');
+
+      var input=document.getElementById('authCodeInput');
+
+      var enter=document.getElementById('authEnterBtn');
+
+      var cancel=document.getElementById('authCancelBtn');
+
+      function showOverlay(){ if(overlay){ overlay.style.display='flex'; input&&input.focus(); } }
+
+      function hideOverlay(){ if(overlay){ overlay.style.display='none'; } }
+
+      if (overlay && !localStorage.getItem('rb_is_authed')) showOverlay();
+
+      if (enter) enter.addEventListener('click', function(){
+
+        var code=(input&&input.value||'').trim();
+
+        if(code===adminPassword){ localStorage.setItem('rb_is_authed','1'); hideOverlay(); showAlert('ברוך הבא 👋','success'); }
+
+        else { if(input){ input.value=''; input.focus(); }
+
+          showAlert('קוד שגוי, נסה שוב','error');
+
+          var card=overlay && overlay.querySelector('.auth-card'); if(card){ card.style.animation='shake 0.5s'; setTimeout(function(){ card.style.animation=''; },500); }
+
+        }
+
+      });
+
+      if (cancel) cancel.addEventListener('click', function(){
+
+        showAlert('נדרש להזין קוד כדי להיכנס','error');
+
+        var card=overlay && overlay.querySelector('.auth-card'); if(card){ card.style.animation='shake 0.5s'; setTimeout(function(){ card.style.animation=''; },500); }
+
+      });
+
+    })();
+
 
 </script>
 </body>
