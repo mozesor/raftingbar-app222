@@ -845,7 +845,7 @@
 <!-- עמוד ניהול -->
 <div class="page" id="adminPage">
 <!-- מסך נעילה -->
-<div class="card" id="adminLock" style="display: none;">
+<div class="card" id="adminLock" style="display: block;">
 <h2>🔒 עמוד ניהול מוגן</h2>
 <p style="text-align: center; color: #666; margin-bottom: 20px;">
                     הזן קוד גישה לניהול המערכת
@@ -863,7 +863,7 @@
                 </div>
 </div>
 <!-- תוכן הניהול -->
-<div id="adminContent" style="display: block;">
+<div id="adminContent" style="display: none;">
 <div class="card">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
 <h2 style="margin: 0;">⚙️ ניהול עובדים</h2>
@@ -894,28 +894,6 @@
                         🔄 איפוס נתונים
                     </button>
 </div>
-<div class="card" id="adminAddEventCard" style="margin-top: 12px;">
-  <h2>➕ הוספת אירוע רטרואקטיבית</h2>
-  <div class="form-group">
-    <label>עובד:</label>
-    <select id="adminEventEmployee"></select>
-  </div>
-  <div class="form-group">
-    <label>תאריך האירוע:</label>
-    <input type="date" id="adminEventDate">
-  </div>
-  <div class="form-group">
-    <label>כמות אירועים:</label>
-    <input type="number" id="adminEventCount" min="1" value="1" step="1">
-  </div>
-  <div class="form-group">
-    <label>הערה (לא חובה):</label>
-    <input type="text" id="adminEventNote" placeholder="סיבת האירוע / הערה">
-  </div>
-  <button class="btn btn-admin" style="width:100%;" onclick="adminAddEvent()">הוסף אירוע</button>
-  <div style="margin-top:10px; font-size: 12px; color:#555;">* הפעולה תירשם גם בגיליון (שורת <code>event</code> לכל אירוע).</div>
-</div>
-
 <div class="card">
 <h2>🔄 סנכרון</h2>
 <p style="text-align: center; color: #666; margin-bottom: 15px;">
@@ -2893,44 +2871,6 @@
   });
   obs.observe(document.documentElement, { childList: true, subtree: true });
 })();
-
-
-/*** ADMIN: Add past events ***/
-function fillAdminEventEmployees(){
-  var sel = document.getElementById('adminEventEmployee');
-  if (!sel) return;
-  var cur = sel.value;
-  sel.innerHTML = '';
-  (employees || []).forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
-  if (cur) sel.value = cur;
-}
-function adminEventDefaults(){
-  var d = document.getElementById('adminEventDate');
-  if (d && !d.value){ d.value = getCurrentDate(); }
-  fillAdminEventEmployees();
-}
-function adminAddEvent(){
-  var empSel = document.getElementById('adminEventEmployee');
-  var emp = empSel && empSel.value;
-  if (!emp){ showAlert('בחר עובד', 'error'); return; }
-  var dateKey = (document.getElementById('adminEventDate')||{}).value || getCurrentDate();
-  var count = parseInt((document.getElementById('adminEventCount')||{}).value || '1', 10);
-  if (!(count>0)) { showAlert('כמות אירועים חייבת להיות 1 או יותר', 'error'); return; }
-  attendanceData[emp] = attendanceData[emp] || {};
-  attendanceData[emp][dateKey] = attendanceData[emp][dateKey] || {};
-  attendanceData[emp][dateKey].events = (attendanceData[emp][dateKey].events || 0) + count;
-  saveLocalData && saveLocalData();
-  updateAll && updateAll();
-  showAlert('נוספו ' + count + ' אירועים ל-' + emp + ' בתאריך ' + dateKey, 'success');
-  if (isInitialized && typeof recordToSheet === 'function'){
-    var now = new Date();
-    for (var i=0;i<count;i++){
-      var stamp = new Date(now.getTime() + i*1000).toISOString();
-      recordToSheet(emp, 'event', stamp, dateKey, now.toLocaleTimeString('he-IL'));
-    }
-  }
-}
-(function(){ var _u = updateAll; updateAll = function(){ _u(); adminEventDefaults(); }; })();
 
 </script>
 </body>
