@@ -703,12 +703,26 @@
 <div class="quick-action-value" id="activeCount">0</div>
 <div class="quick-action-label">עובדים פעילים</div>
 </div>
-<div class="quick-action" onclick="showPage('reports')">
+<div class="quick-action" onclick="showPage('self')">
 <div class="quick-action-value" id="todayHours">0</div>
 <div class="quick-action-label">שעות היום</div>
 </div>
 </div>
 </div>
+        <div class="card" id="eventsCard" style="margin-top:10px;">
+          <h2>➕ אירוע</h2>
+          <div class="form-group">
+            <label>תאריך האירוע:</label>
+            <input type="date" id="eventDate">
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-admin" onclick="addEventForEmployee()">הוסף אירוע</button>
+          </div>
+          <div class="status-display">
+            <div>סה״כ אירועים היום לעובד: <strong id="todayEventsCount">0</strong></div>
+          </div>
+        </div>
+        
 </div>
 <!-- עמוד עובדים -->
 <div class="page" id="employeesPage">
@@ -717,17 +731,7 @@
 <div class="employee-grid" id="employeeGrid"></div>
 </div>
 </div>
-<!-- עמוד דוחות -->
-<div class="page" id="reportsPage">
-<div class="card" id="reportsLock" style="display: block;">
-<h2>🔒 דוחות מוגנים</h2>
-<p style="text-align: center; color: #666; margin-bottom: 20px;">
-            הזן קוד גישה לצפייה בדוחות
-          </p>
-<div class="form-group">
-<label>קוד גישה:</label>
-<input id="reportsPassword" maxlength="6" placeholder="הזן קוד גישה" type="password"/>
-</div>
+<!-- עמוד דוחות הוסר -->
 <button class="btn btn-admin" onclick="checkReportsPassword()" style="width: 100%;">🔓 פתח דוחות</button>
 </div>
 <div class="card" id="reportsContent" style="display: none;">
@@ -742,7 +746,30 @@
 </div>
 </div>
 <!-- עמוד דוחות מפורטים -->
-<div class="page" id="detailedReportsPage">
+<div class="page" 
+<!-- עמוד דוח אישי -->
+<div class="page" id="selfPage">
+  <div class="card">
+    <h2>👤 דוח אישי לעובד</h2>
+    <div class="form-group">
+      <label>בחר עובד:</label>
+      <select id="selfEmployee"></select>
+    </div>
+    <div class="form-group">
+      <label>תקופה:</label>
+      <select id="selfPeriod">
+        <option value="month" selected>החודש</option>
+        <option value="week">השבוע</option>
+        <option value="today">היום</option>
+      </select>
+    </div>
+    <button class="btn btn-admin" style="width:100%;" onclick="renderSelf()">הצג דוח</button>
+    <div class="detailed-reports-table" style="margin-top:12px;">
+      <table class="data-table" id="selfTable"></table>
+    </div>
+  </div>
+</div>
+id="detailedReportsPage">
 <!-- מסך נעילה -->
 <div class="card" id="detailedReportsLock" style="display: block;">
 <h2>🔒 דוחות מפורטים מוגנים</h2>
@@ -845,7 +872,7 @@
 <!-- עמוד ניהול -->
 <div class="page" id="adminPage">
 <!-- מסך נעילה -->
-<div class="card" id="adminLock" style="display: block;">
+<div class="card" id="adminLock" style="display: none;">
 <h2>🔒 עמוד ניהול מוגן</h2>
 <p style="text-align: center; color: #666; margin-bottom: 20px;">
                     הזן קוד גישה לניהול המערכת
@@ -863,7 +890,7 @@
                 </div>
 </div>
 <!-- תוכן הניהול -->
-<div id="adminContent" style="display: none;">
+<div id="adminContent" style="display: block;">
 <div class="card">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
 <h2 style="margin: 0;">⚙️ ניהול עובדים</h2>
@@ -929,7 +956,7 @@
 <div>👥</div>
 <div>עובדים</div>
 </button>
-<button class="nav-btn" onclick="showPage('reports')">
+<button class="nav-btn" onclick="showPage('self')">
 <div>📊</div>
 <div>דוחות</div>
 </button>
@@ -1105,7 +1132,7 @@
                                 newAttendanceData[employee][date] = {};
                             }
                             
-                            if (action === 'checkin') {
+                            if (action === 'event') { newAttendanceData[employee][date].events = (newAttendanceData[employee][date].events || 0) + 1; } else if (action === 'checkin') {
                                 newAttendanceData[employee][date].checkIn = timestamp;
                                 if (date === currentDate) {
                                     newCurrentStatus[employee] = 'in';
@@ -2871,6 +2898,18 @@
   });
   obs.observe(document.documentElement, { childList: true, subtree: true });
 })();
+
+
+function selfDateRange(period){var end=new Date();end.setHours(23,59,59,999);var start=new Date(end);if(period==='today'){start=new Date(end.getFullYear(),end.getMonth(),end.getDate(),0,0,0,0);}else if(period==='week'){start.setDate(end.getDate()-6);}else{start=new Date(end.getFullYear(),end.getMonth(),1,0,0,0,0);}return {start:start,end:end};}
+function fillSelfEmployees(){var sel=document.getElementById('selfEmployee');if(!sel)return;var keep=sel.value;sel.innerHTML='';(employees||[]).forEach(function(n){var o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});if(keep)sel.value=keep;}
+function renderSelf(){var emp=(document.getElementById('selfEmployee')||{}).value;if(!emp){showAlert('בחר עובד','error');return;}var period=(document.getElementById('selfPeriod')||{}).value||'month';var rng=selfDateRange(period);var rows=[['תאריך','כניסה','יציאה','שעות','אירועים']];var days=0,total=0,eventsTotal=0;for(var d=new Date(rng.start);d<=rng.end;d.setDate(d.getDate()+1)){var y=d.getFullYear(),m=(''+(d.getMonth()+1)).padStart(2,'0'),da=(''+d.getDate()).padStart(2,'0');var key=y+'-'+m+'-'+da;var day=attendanceData[emp]&&attendanceData[emp][key];if(!day)continue;var hours=0;if(day.checkIn)hours=calculateHours(day.checkIn,day.checkOut||null);if(day.checkIn||day.checkOut){days++;total+=hours;}var ev=day.events||0;eventsTotal+=ev;rows.push([da+'/'+(d.getMonth()+1),day.checkIn?formatTime(day.checkIn):'-',day.checkOut?formatTime(day.checkOut):'-',hours||0,ev]);}rows.unshift(['ימי עבודה: '+days,'','סה״כ שעות: '+(Math.round(total*10)/10),'','סה״כ אירועים: '+eventsTotal]);var table=document.getElementById('selfTable');var htmlRows=rows.map(function(r,i){var tag=i===0?'th':'td';return '<tr>'+r.map(function(c){return '<'+tag+'>'+c+'</'+tag+'>';}).join('')+'</tr>';}).join('');table.innerHTML=htmlRows;}
+(function(){var _u=updateAll;updateAll=function(){_u();fillSelfEmployees();};})();
+
+function getOrCreateDay(employee,dateKey){attendanceData[employee]=attendanceData[employee]||{};attendanceData[employee][dateKey]=attendanceData[employee][dateKey]||{};return attendanceData[employee][dateKey];}
+function addEventForEmployee(){var sel=document.getElementById('employeeSelect');var employee=sel&&sel.value;if(!employee){showAlert('אנא בחר עובד','error');return;}var picker=document.getElementById('eventDate');var dateKey=(picker&&picker.value)||getCurrentDate();var day=getOrCreateDay(employee,dateKey);day.events=(day.events||0)+1;saveLocalData&&saveLocalData();updateAll&&updateAll();showAlert('נוסף אירוע ל-'+employee+' בתאריך '+dateKey,'success');if(isInitialized&&typeof recordToSheet==='function'){var now=new Date();recordToSheet(employee,'event',now.toISOString(),dateKey,now.toLocaleTimeString('he-IL'));}}
+function updateTodayEventsUI(){var el=document.getElementById('todayEventsCount');if(!el)return;var sel=document.getElementById('employeeSelect');var employee=sel&&sel.value;if(!employee){el.textContent='0';return;}var day=attendanceData[employee]&&attendanceData[employee][getCurrentDate()];el.textContent=day&&day.events?day.events:0;}
+function setEventDateDefault(){var inp=document.getElementById('eventDate');if(inp&&!inp.value){inp.value=getCurrentDate();}}
+(function(){var _u=updateAll;updateAll=function(){_u();updateTodayEventsUI();setEventDateDefault();};})();
 
 </script>
 </body>
