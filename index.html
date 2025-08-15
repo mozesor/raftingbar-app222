@@ -767,9 +767,7 @@
 <label>קוד גישה:</label>
 <input id="detailedReportsPassword" maxlength="6" placeholder="הזן קוד גישה" type="password">
 </input></div>
-<button class="btn btn-admin" onclick="checkDetailedReportsPassword()" style="width: 100%;">
-                    🔓 פתח דוחות
-                </button>
+
 <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 10px; font-size: 14px; color: #1976d2;">
                     💡 <strong>טיפ:</strong> הקוד ברירת המחדל הוא: <strong>1234</strong><br/>
                     ניתן לשנות בהגדרות המערכת
@@ -917,7 +915,7 @@
                         ⚡ סנכרון ידני
                     </button>
 </div>
-<div class="card" id="adminRetroEventCard"><h2>🕒 הוספת אירוע רטרואקטיבית</h2><div class="form-group"><label>בחר עובד:</label><select id="adminEventEmployee"></select></div><div class="form-group"><label>תאריך האירוע:</label><input id="adminEventDate" type="date"/></div><button class="btn btn-admin" onclick="addRetroEvent()" style="width: 100%; margin-bottom: 15px;">➕ הוסף אירוע ליום שנבחר</button></div><div class="card">
+<div class="card">
 <h2>🔐 אבטחה</h2>
 <div class="form-group">
 <label>שנה קוד גישה:</label>
@@ -1452,19 +1450,6 @@
                 }
                 
                 removeSelect.value = removeValue;
-            }
-            // בחירת עובד לאירוע רטרואקטיבי
-            var adminEventSelect = document.getElementById('adminEventEmployee');
-            if (adminEventSelect){
-                var evValue = adminEventSelect.value;
-                adminEventSelect.innerHTML = '<option value="">-- בחר עובד --</option>';
-                for (var i = 0; i < employees.length; i++) {
-                    var opt = document.createElement('option');
-                    opt.value = employees[i];
-                    opt.text = employees[i];
-                    adminEventSelect.appendChild(opt);
-                }
-                adminEventSelect.value = evValue;
             }
         }
 
@@ -2112,7 +2097,7 @@
                     '<div class="stat-label">ימי עבודה</div>' +
                 '</div>' +
                 '<div class="stat-card">' +
-                    '<div class="stat-value">' + (Math.round(data.averageHours * 10) / 10) + '</div>' +
+                    '<div class="stat-value">' + data.averageHours + '</div>' +
                     '<div class="stat-label">ממוצע יומי</div>' +
                 '</div>' +
                 '<div class="stat-card">' +
@@ -2130,36 +2115,15 @@
         }
 
         function updateDetailedHoursChart(data) {
-    var chartDiv = document.getElementById('detailedHoursChart');
-    if (!chartDiv) return;
-    if (!data.dailyData || data.dailyData.length === 0) {
-        chartDiv.innerHTML = '<p style="text-align: center; color: #666;">אין נתונים להצגה</p>';
-        return;
-    }
-    var maxHours = 0;
-    for (var i = 0; i < data.dailyData.length; i++) {
-        if (data.dailyData[i].totalHours > maxHours) maxHours = data.dailyData[i].totalHours;
-    }
-    if (maxHours === 0) maxHours = 1;
-    var dayNames = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-    var chartHtml = '';
-    for (var i = 0; i < data.dailyData.length; i++) {
-        var day = data.dailyData[i];
-        var parts = day.date.split('-'); // YYYY-MM-DD
-        var dateObj = new Date(day.date);
-        var dayName = dayNames[dateObj.getDay()];
-        var value = Math.round(day.totalHours * 10) / 10;
-        var width = day.totalHours > 0 ? (day.totalHours / maxHours) * 100 : 0;
-        if (day.totalHours > 0 && width < 6) width = 6; // מינימום נראה
-        chartHtml += '<div class="chart-label"><span>' + dayName + ' ' + parts[2] + '/' + parts[1] + '</span>' +
-                     '<span>' + value + 'ש (' + day.workers + ' עובדים)</span></div>' +
-                     '<div class="chart-bar" style="width:' + width + '%">' +
-                     (value > 0 ? value + 'ש' : '') +
-                     '</div>';
-    }
-    chartDiv.innerHTML = chartHtml;
-}
-var maxHours = 1;
+            var chartDiv = document.getElementById('detailedHoursChart');
+            if (!chartDiv) return;
+            
+            if (data.dailyData.length === 0) {
+                chartDiv.innerHTML = '<p style="text-align: center; color: #666;">אין נתונים להצגה</p>';
+                return;
+            }
+
+            var maxHours = 1;
             for (var i = 0; i < data.dailyData.length; i++) {
                 if (data.dailyData[i].totalHours > maxHours) {
                     maxHours = data.dailyData[i].totalHours;
@@ -2178,7 +2142,7 @@ var maxHours = 1;
                 var width = (day.totalHours / maxHours) * 100;
                 
                 chartHtml += 
-                    '<div class="chart-label">' + dayName + ' ' + dayNum + ' - ' + (Math.round(day.totalHours * 10) / 10) + 'ש (' + day.workers + ' עובדים)</div>' +
+                    '<div class="chart-label">' + dayName + ' ' + dayNum + ' - ' + day.totalHours + 'ש (' + day.workers + ' עובדים)</div>' +
                     '<div class="chart-bar" style="width: ' + width + '%">' +
                         (day.totalHours > 0 ? day.totalHours + 'ש' : '') +
                     '</div>';
@@ -2229,7 +2193,7 @@ var maxHours = 1;
                         '<td><strong>' + emp.name + '</strong></td>' +
                         '<td>' + (Math.round(emp.totalHours * 10) / 10) + '</td>' +
                         '<td>' + emp.workDays + '</td>' +
-                        '<td>' + (Math.round(emp.averageHours * 10) / 10) + '</td>' +
+                        '<td>' + emp.averageHours + '</td>' +
                         '<td>' + (Math.round(emp.overtimeHours * 10) / 10) + '</td>' +
                         '<td>' + emp.missingDays + '</td>' +
                         '<td>' + statusBadge + '</td>' +
@@ -2480,60 +2444,12 @@ var maxHours = 1;
         } else {
             initApp();
         }
-    
-<script>
-function addRetroEvent(){
-    var empSel = document.getElementById('adminEventEmployee');
-    var dateInp = document.getElementById('adminEventDate');
-    var emp = empSel ? empSel.value : '';
-    var date = dateInp ? dateInp.value : '';
-    if(!emp){ showAlert('אנא בחר עובד', 'error'); return; }
-    if(!date){ showAlert('אנא בחר תאריך', 'error'); return; }
-    if(!attendanceData[emp]) attendanceData[emp] = {};
-    if(!attendanceData[emp][date]) attendanceData[emp][date] = {};
-    attendanceData[emp][date].events = (attendanceData[emp][date].events || 0) + 1;
-    saveLocalData();
-    updateAll();
-    // שליחה לגיליון כאירוע
-    var now = new Date();
-    var timestamp = now.toISOString();
-    var time = now.toLocaleTimeString('he-IL');
-    recordToSheet(emp, 'event', timestamp, date, time).then(function(){ 
-        showAlert('נוסף אירוע ל' + emp + ' בתאריך ' + date, 'success'); 
-        setTimeout(loadDataFromSheet, 1000);
-    });
-}
-</script>
-</script>
+    </script>
 <script>if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function(e){ console.log('SW register failed', e); });
   });
-}
-<script>
-function addRetroEvent(){
-    var empSel = document.getElementById('adminEventEmployee');
-    var dateInp = document.getElementById('adminEventDate');
-    var emp = empSel ? empSel.value : '';
-    var date = dateInp ? dateInp.value : '';
-    if(!emp){ showAlert('אנא בחר עובד', 'error'); return; }
-    if(!date){ showAlert('אנא בחר תאריך', 'error'); return; }
-    if(!attendanceData[emp]) attendanceData[emp] = {};
-    if(!attendanceData[emp][date]) attendanceData[emp][date] = {};
-    attendanceData[emp][date].events = (attendanceData[emp][date].events || 0) + 1;
-    saveLocalData();
-    updateAll();
-    // שליחה לגיליון כאירוע
-    var now = new Date();
-    var timestamp = now.toISOString();
-    var time = now.toLocaleTimeString('he-IL');
-    recordToSheet(emp, 'event', timestamp, date, time).then(function(){ 
-        showAlert('נוסף אירוע ל' + emp + ' בתאריך ' + date, 'success'); 
-        setTimeout(loadDataFromSheet, 1000);
-    });
-}
-</script>
-</script>
+}</script>
 <script>
   // שימוש בקוד מנהל לעמוד "דוחות"
   function checkReportsPassword(){
@@ -2574,30 +2490,6 @@ function addRetroEvent(){
       return ret;
     };
   })();
-
-<script>
-function addRetroEvent(){
-    var empSel = document.getElementById('adminEventEmployee');
-    var dateInp = document.getElementById('adminEventDate');
-    var emp = empSel ? empSel.value : '';
-    var date = dateInp ? dateInp.value : '';
-    if(!emp){ showAlert('אנא בחר עובד', 'error'); return; }
-    if(!date){ showAlert('אנא בחר תאריך', 'error'); return; }
-    if(!attendanceData[emp]) attendanceData[emp] = {};
-    if(!attendanceData[emp][date]) attendanceData[emp][date] = {};
-    attendanceData[emp][date].events = (attendanceData[emp][date].events || 0) + 1;
-    saveLocalData();
-    updateAll();
-    // שליחה לגיליון כאירוע
-    var now = new Date();
-    var timestamp = now.toISOString();
-    var time = now.toLocaleTimeString('he-IL');
-    recordToSheet(emp, 'event', timestamp, date, time).then(function(){ 
-        showAlert('נוסף אירוע ל' + emp + ' בתאריך ' + date, 'success'); 
-        setTimeout(loadDataFromSheet, 1000);
-    });
-}
-</script>
 </script>
 <div id="floatingLogoutBtn" style="display:none; position:fixed; top:10px; right:10px; z-index:9999; background:none; border:none; font-size:26px; cursor:pointer; line-height:1;" title="התנתק">
   🚪
@@ -2626,30 +2518,6 @@ function addRetroEvent(){
       }, 500);
     });
   });
-
-<script>
-function addRetroEvent(){
-    var empSel = document.getElementById('adminEventEmployee');
-    var dateInp = document.getElementById('adminEventDate');
-    var emp = empSel ? empSel.value : '';
-    var date = dateInp ? dateInp.value : '';
-    if(!emp){ showAlert('אנא בחר עובד', 'error'); return; }
-    if(!date){ showAlert('אנא בחר תאריך', 'error'); return; }
-    if(!attendanceData[emp]) attendanceData[emp] = {};
-    if(!attendanceData[emp][date]) attendanceData[emp][date] = {};
-    attendanceData[emp][date].events = (attendanceData[emp][date].events || 0) + 1;
-    saveLocalData();
-    updateAll();
-    // שליחה לגיליון כאירוע
-    var now = new Date();
-    var timestamp = now.toISOString();
-    var time = now.toLocaleTimeString('he-IL');
-    recordToSheet(emp, 'event', timestamp, date, time).then(function(){ 
-        showAlert('נוסף אירוע ל' + emp + ' בתאריך ' + date, 'success'); 
-        setTimeout(loadDataFromSheet, 1000);
-    });
-}
-</script>
 </script>
 <div id="floatingLogoutBtn" style="display:none; position:fixed; top:10px; right:10px; z-index:2500; background:none; border:none; font-size:26px; cursor:pointer; line-height:1;" title="התנתק">
   🚪
@@ -2758,30 +2626,6 @@ function addRetroEvent(){
     }
   });
 })();
-
-<script>
-function addRetroEvent(){
-    var empSel = document.getElementById('adminEventEmployee');
-    var dateInp = document.getElementById('adminEventDate');
-    var emp = empSel ? empSel.value : '';
-    var date = dateInp ? dateInp.value : '';
-    if(!emp){ showAlert('אנא בחר עובד', 'error'); return; }
-    if(!date){ showAlert('אנא בחר תאריך', 'error'); return; }
-    if(!attendanceData[emp]) attendanceData[emp] = {};
-    if(!attendanceData[emp][date]) attendanceData[emp][date] = {};
-    attendanceData[emp][date].events = (attendanceData[emp][date].events || 0) + 1;
-    saveLocalData();
-    updateAll();
-    // שליחה לגיליון כאירוע
-    var now = new Date();
-    var timestamp = now.toISOString();
-    var time = now.toLocaleTimeString('he-IL');
-    recordToSheet(emp, 'event', timestamp, date, time).then(function(){ 
-        showAlert('נוסף אירוע ל' + emp + ' בתאריך ' + date, 'success'); 
-        setTimeout(loadDataFromSheet, 1000);
-    });
-}
-</script>
 </script>
 <script>
 
@@ -3126,30 +2970,6 @@ function setEventDateDefault(){
 }
 (function(){ var _u = updateAll; updateAll = function(){ _u(); updateTodayEventsUI(); setEventDateDefault(); }; })();
 
-
-<script>
-function addRetroEvent(){
-    var empSel = document.getElementById('adminEventEmployee');
-    var dateInp = document.getElementById('adminEventDate');
-    var emp = empSel ? empSel.value : '';
-    var date = dateInp ? dateInp.value : '';
-    if(!emp){ showAlert('אנא בחר עובד', 'error'); return; }
-    if(!date){ showAlert('אנא בחר תאריך', 'error'); return; }
-    if(!attendanceData[emp]) attendanceData[emp] = {};
-    if(!attendanceData[emp][date]) attendanceData[emp][date] = {};
-    attendanceData[emp][date].events = (attendanceData[emp][date].events || 0) + 1;
-    saveLocalData();
-    updateAll();
-    // שליחה לגיליון כאירוע
-    var now = new Date();
-    var timestamp = now.toISOString();
-    var time = now.toLocaleTimeString('he-IL');
-    recordToSheet(emp, 'event', timestamp, date, time).then(function(){ 
-        showAlert('נוסף אירוע ל' + emp + ' בתאריך ' + date, 'success'); 
-        setTimeout(loadDataFromSheet, 1000);
-    });
-}
-</script>
 </script>
 </body>
 </html>
