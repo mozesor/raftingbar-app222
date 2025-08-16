@@ -3522,5 +3522,89 @@ if (document.readyState === 'loading'){
   };
 })();
 </script>
+
+<!-- RB_PATCH: admin_retro_event_only -->
+<script>
+(function(){
+  function byId(id){ return document.getElementById(id); }
+  function todayStr(){ var d=new Date(),y=d.getFullYear(),m=('0'+(d.getMonth()+1)).slice(-2),dd=('0'+d.getDate()).slice(-2); return y+'-'+m+'-'+dd; }
+
+  // Fill the admin retro event employee list from window.employees
+  function fillAdminEventEmployees(){
+    var sel = byId('adminEventEmployee');
+    if (!sel) return;
+    var current = sel.value;
+    sel.innerHTML = '<option value="">-- בחר עובד --</option>';
+    (window.employees || []).forEach(function(name){
+      var opt = document.createElement('option');
+      opt.value = name; opt.text = name;
+      sel.appendChild(opt);
+    });
+    if (current) sel.value = current;
+  }
+
+  // Public function used by the button onclick="addRetroEvent()"
+  window.addRetroEvent = function(){
+    var emp  = (byId('adminEventEmployee')||{}).value;
+    var dateKey = (byId('adminEventDate')||{}).value || todayStr();
+    if (!emp){ try{ showAlert('אנא בחר עובד','error'); }catch(_){ alert('אנא בחר עובד'); } return; }
+    if (!dateKey){ try{ showAlert('אנא בחר תאריך','error'); }catch(_){ alert('אנא בחר תאריך'); } return; }
+
+    try{
+      // Ensure data structs exist and increment event counter
+      window.attendanceData = window.attendanceData || {};
+      if (!attendanceData[emp]) attendanceData[emp] = {};
+      if (!attendanceData[emp][dateKey]) attendanceData[emp][dateKey] = {};
+      attendanceData[emp][dateKey].events = (attendanceData[emp][dateKey].events || 0) + 1;
+
+      // Save locally and refresh UI
+      try{ if (typeof saveLocalData==='function') saveLocalData(); }catch(e){}
+      try{ if (typeof updateAll==='function') updateAll(); }catch(e){}
+
+      // Record to cloud if initialized
+      try{
+        if (window.isInitialized && typeof recordToSheet==='function'){
+          var now = new Date();
+          recordToSheet(emp, 'event', now.toISOString(), dateKey, now.toLocaleTimeString('he-IL'));
+          // optional sync refresh (non-blocking)
+          setTimeout(function(){ try{ if (typeof loadDataFromSheet==='function') loadDataFromSheet(); }catch(e){} }, 1500);
+        }
+      }catch(e){}
+
+      try{ if (typeof showAlert==='function') showAlert('נוסף אירוע ל-' + emp + ' בתאריך ' + dateKey, 'success'); else alert('נוסף אירוע'); }catch(e){}
+    }catch(err){
+      console.error('addRetroEvent error:', err);
+      try{ if (typeof showAlert==='function') showAlert('שגיאה בשמירה','error'); else alert('שגיאה בשמירה'); }catch(e){}
+    }
+  };
+
+  // Init: default date (today if empty) and populate employee list
+  function initAdminRetro(){
+    try{
+      var d = byId('adminEventDate');
+      if (d && !d.value){ d.value = todayStr(); }
+    }catch(e){}
+    fillAdminEventEmployees();
+  }
+
+  if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', initAdminRetro); }
+  else { initAdminRetro(); }
+
+  // Keep select in sync when the app updates employees
+  var _updateEmployeeSelects = window.updateEmployeeSelects;
+  window.updateEmployeeSelects = function(){
+    try{ if (typeof _updateEmployeeSelects==='function') _updateEmployeeSelects(); }catch(e){}
+    fillAdminEventEmployees();
+  };
+
+  // Re-apply when navigating to admin page (SPA)
+  var _sp = window.showPage;
+  window.showPage = function(name){
+    try{ if (typeof _sp==='function') _sp.apply(this, arguments); }catch(e){}
+    if (name === 'admin'){ setTimeout(initAdminRetro, 50); }
+  };
+})();
+</script>
+
 </body>
 </html>
