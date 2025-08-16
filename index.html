@@ -3404,5 +3404,94 @@ if (document.readyState === 'loading'){
 })();
 </script>
 
+
+<!-- RB_PATCH: cancel_harden + detailed_open_btn -->
+<script>
+(function () {
+  // 1) הקשחת "ביטול" בחלון קוד כניסה – לא סוגר ולא מכניס
+  function hardenEntryCancel() {
+    var cancel = document.getElementById('authCancelBtn') || document.getElementById('entryCancelBtn');
+    var ov     = document.getElementById('authOverlay')   || document.getElementById('entryOverlay');
+    var input  = document.getElementById('authCodeInput') || document.getElementById('entryCodeInput');
+    if (!cancel) return;
+
+    var clone = cancel.cloneNode(true);
+    clone.id = cancel.id;
+    clone.removeAttribute('onclick');
+    clone.setAttribute('type','button');
+    cancel.parentNode.replaceChild(clone, cancel);
+
+    clone.addEventListener('click', function (ev) {
+      try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); } catch(e) {}
+      if (ov) {
+        ov.style.display = 'flex';
+        setTimeout(function(){ ov.style.display = 'flex'; }, 0);
+      }
+      if (input) { input.value = ''; input.focus(); }
+      try {
+        if (typeof showAlert === 'function') showAlert('צריך להזין קוד כדי להמשיך','warning');
+        else alert('צריך להזין קוד כדי להמשיך');
+      } catch(e) {}
+      return false;
+    }, true);
+
+    if (ov && !ov._entryPatch) {
+      ov._entryPatch = true;
+      ov.addEventListener('click', function(e){ try{ e.stopPropagation(); }catch(_){} }, true);
+    }
+  }
+
+  // 2) כפתור "פתח ניהול" + Enter בדוחות מפורטים
+  function ensureDetailedOpenButton() {
+    var lock = document.getElementById('detailedReportsLock');
+    var pwd  = document.getElementById('detailedReportsPassword');
+    if (!lock || !pwd) return;
+
+    if (!document.getElementById('detailedReportsEnterBtn')) {
+      var btn = document.createElement('button');
+      btn.id = 'detailedReportsEnterBtn';
+      btn.className = 'btn';
+      btn.style.cssText = 'margin-top:10px;width:100%;';
+      btn.textContent = 'פתח ניהול';
+      btn.onclick = function () {
+        try { return checkDetailedReportsPassword(); }
+        catch (e) { console.error(e); return false; }
+      };
+      (pwd.parentElement || lock).appendChild(btn);
+    }
+
+    if (!pwd._wiredEnter) {
+      pwd._wiredEnter = true;
+      pwd.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          try { return checkDetailedReportsPassword(); }
+          catch (err) { console.error(err); }
+          return false;
+        }
+      });
+    }
+  }
+
+  function init() {
+    hardenEntryCancel();
+    ensureDetailedOpenButton();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  var sp = window.showPage;
+  window.showPage = function (name) {
+    try { if (typeof sp === 'function') sp.apply(this, arguments); } catch(e) {}
+    if (name === 'detailedReports' || name === 'detailed' || name === 'reports') {
+      ensureDetailedOpenButton();
+    }
+  };
+})();
+</script>
+
 </body>
 </html>
