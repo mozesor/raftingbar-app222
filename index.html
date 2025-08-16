@@ -670,16 +670,13 @@
 #eventsInlineTable tbody tr:hover{ background: #f0f3ff; }
     
 
-/* Entry overlay (one-time) */
-#entryOverlay { position: fixed; inset: 0; background: rgba(0,0,0,.45);
-  display: none; align-items: center; justify-content: center; z-index: 9999; }
-#entryBox { background: #fff; width: min(92vw, 380px); border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 18px; direction: rtl; }
-#entryBox h2 { margin: 0 0 10px; font-size: 18px; }
-#entryBox p { margin: 0 0 10px; color: #555; }
-#entryBox .input { width: 100%; padding: 10px; border: 1px solid #d0d5ff; border-radius: 10px; }
-#entryBox .btn { margin-top: 10px; width: 100%; background:#4f46e5; color:#fff; border:none; border-radius:10px; padding:10px 14px; font-weight:700; cursor:pointer; }
-#entryCancelBtn { background:#9aa1ff !important; }
+#entryOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9999}
+#entryBox{background:#fff;width:min(92vw,380px);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:18px;direction:rtl}
+#entryBox h2{margin:0 0 10px;font-size:18px}
+#entryBox p{margin:0 0 10px;color:#555}
+#entryBox .input{width:100%;padding:10px;border:1px solid #d0d5ff;border-radius:10px}
+#entryBox .btn{margin-top:10px;width:100%;background:#4f46e5;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+#entryCancelBtn{background:#9aa1ff!important}
 </style>
 <link href="icon-180x180.png" rel="apple-touch-icon" sizes="180x180"/><link href="icon-167x167.png" rel="apple-touch-icon" sizes="167x167"/><link href="icon-152x152.png" rel="apple-touch-icon" sizes="152x152"/><link href="icon-144x144.png" rel="apple-touch-icon" sizes="144x144"/></head>
 <body>
@@ -783,7 +780,7 @@
 <!-- עמוד דוחות מפורטים -->
 <div class="page" id="detailedReportsPage">
 <!-- מסך נעילה -->
-<div class="card" id="detailedReportsLock" style="display:none">
+<div class="card" id="detailedReportsLock" style="display: block;">
 <h2>🔒 דוחות מפורטים מוגנים</h2>
 <p style="text-align: center; color: #666; margin-bottom: 20px;">
                     הזן קוד גישה לצפייה בדוחות המפורטים
@@ -791,14 +788,14 @@
 <div class="form-group">
 <label>קוד גישה:</label>
 <input id="detailedReportsPassword" maxlength="6" placeholder="הזן קוד גישה" type="password"/>
-</div>
+<button class="btn" id="detailedReportsEnterBtn" onclick="return checkDetailedReportsPassword();" style="margin-top:10px;width:100%;">פתח ניהול</button></div>
 <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 10px; font-size: 14px; color: #1976d2;">
                     💡 <strong>טיפ:</strong> הקוד ברירת המחדל הוא: <strong>1234</strong><br/>
                     ניתן לשנות בהגדרות המערכת
                 </div>
 </div>
 <!-- תוכן הדוחות המפורטים -->
-<div id="detailedReportsContent" style="display:block">
+<div id="detailedReportsContent" style="display: block;">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
 <h2 style="margin: 0;">📊 דוחות מפורטים</h2>
 <button class="btn" onclick="lockDetailedReports()" style="background: #f44336; color: white; padding: 8px 12px; font-size: 14px;">
@@ -881,7 +878,7 @@
 <!-- עמוד ניהול -->
 <div class="page" id="adminPage">
 <!-- מסך נעילה -->
-<div class="card" id="adminLock" style="display:none">
+<div class="card" id="adminLock" style="display: block;">
 <h2>🔒 עמוד ניהול מוגן</h2>
 <p style="text-align: center; color: #666; margin-bottom: 20px;">
                     הזן קוד גישה לניהול המערכת
@@ -899,7 +896,7 @@
                 </div>
 </div>
 <!-- תוכן הניהול -->
-<div id="adminContent" style="display:block">
+<div id="adminContent" style="display: block;">
 <div class="card">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
 <h2 style="margin: 0;">⚙️ ניהול עובדים</h2>
@@ -1331,17 +1328,7 @@
         }
 
         // פונקציות נעילה לדוחות מפורטים
-        function checkDetailedReportsPassword() {
-            var enteredPassword = document.getElementById('detailedReportsPassword').value;
-            
-            if (enteredPassword === adminPassword) {
-                isDetailedReportsUnlocked = true;
-                document.getElementById('detailedReportsLock').style.display = 'none';
-                document.getElementById('detailedReportsContent').style.display = 'block';
-                document.getElementById('detailedReportsPassword').value = '';
-                setTimeout(function() {
-                    initDetailedReportsPage();
-                }, 100);
+        , 100);
                 showAlert('נכנסת לדוחות המפורטים בהצלחה', 'success');
             } else {
                 document.getElementById('detailedReportsPassword').value = '';
@@ -2475,10 +2462,7 @@
 }</script>
 <script>
   // שימוש בקוד מנהל לעמוד "דוחות"
-  function checkReportsPassword(){
-    var entered = String(document.getElementById('reportsPassword')?.value || '').trim();
-    var adminPass = '1986';
-    try { if (typeof adminPassword !== 'undefined' && adminPassword) adminPass = String(adminPassword); } catch(e){}
+  catch(e){}
     if (entered === adminPass){
       document.getElementById('reportsLock').style.display = 'none';
       document.getElementById('reportsContent').style.display = 'block';
@@ -3324,7 +3308,6 @@ if (document.readyState === 'loading'){
 </script>
 <div id="entryOverlay"><div id="entryBox"><h2>קוד כניסה</h2><p>הכנס קוד חד־פעמי לכניסה ראשונית:</p><input class="input" id="entryCodeInput" placeholder="הכנס קוד" type="password"/><button class="btn" id="entryEnterBtn">כניסה</button><button class="btn" id="entryCancelBtn">ביטול</button></div></div>
 <script>
-// ---- One-time entry gate: 97531 ----
 (function(){
   function needEntry(){ try { return localStorage.getItem('entryUnlocked') !== '1'; } catch(e){ return true; } }
   function showOverlay(){
@@ -3332,21 +3315,10 @@ if (document.readyState === 'loading'){
     if (!ov) return;
     ov.style.display = 'flex';
     var input = document.getElementById('entryCodeInput');
-    if (input){
-      input.addEventListener('keydown', function(e){ if (e.key==='Enter'){ e.preventDefault(); enter(); } });
-      setTimeout(function(){ input.focus(); }, 50);
-    }
     var enterBtn = document.getElementById('entryEnterBtn');
-    if (enterBtn) enterBtn.onclick = function(e){ try{e.preventDefault();}catch(_){ } enter(); return false; };
     var cancelBtn = document.getElementById('entryCancelBtn');
-    if (cancelBtn) cancelBtn.onclick = function(e){
-      try{ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }catch(_){}
-      if (input){ input.value=''; input.focus(); }
-      alert('יש להזין קוד כדי להמשיך');
-      return false;
-    };
-    function enter(){
-      var v = String((document.getElementById('entryCodeInput')||{}).value||'').trim();
+    function ok(){
+      var v = String((input||{}).value||'').trim();
       if (v === '97531'){
         try { localStorage.setItem('entryUnlocked','1'); } catch(_){}
         ov.style.display = 'none';
@@ -3355,40 +3327,108 @@ if (document.readyState === 'loading'){
         if (input){ input.value=''; input.focus(); }
       }
     }
+    if (enterBtn && !enterBtn._wired){ enterBtn._wired = true; enterBtn.onclick = function(e){ try{e.preventDefault();}catch(_){ } ok(); return false; }; }
+    if (cancelBtn && !cancelBtn._wired){
+      cancelBtn._wired = true;
+      cancelBtn.onclick = function(e){
+        try{ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }catch(_){}
+        if (input){ input.value=''; input.focus(); }
+        alert('יש להזין קוד כדי להמשיך');
+        return false;
+      };
+    }
+    if (input && !input._wired){
+      input._wired = true;
+      input.addEventListener('keydown', function(e){ if (e.key==='Enter'){ e.preventDefault(); ok(); } });
+      setTimeout(function(){ input.focus(); }, 60);
+    }
   }
   try{ var qs = new URLSearchParams(window.location.search); if (qs.get('forceEntry')==='1'){ localStorage.removeItem('entryUnlocked'); } }catch(_){}
   function initEntry(){ if (needEntry()) showOverlay(); }
   if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', initEntry); } else { initEntry(); }
 })();
 
-// ---- Remove admin/detailed locks (always open) ----
-(function(){
-  function openAdmin(){
-    try{
+function checkReportsPassword(){
+  try {
+    var input = document.getElementById('adminPassword');
+    var val = input ? String(input.value||'').trim() : '';
+    if (val === '1986'){
       window.isAdminUnlocked = true;
-      var l = document.getElementById('adminLock');
-      var c = document.getElementById('adminContent');
-      if (l) l.style.display = 'none';
-      if (c) c.style.display = 'block';
-    }catch(e){}
-  }
-  function openDetailed(){
-    try{
+      var lock = document.getElementById('adminLock');
+      var content = document.getElementById('adminContent');
+      if (lock) lock.style.display = 'none';
+      if (content) content.style.display = 'block';
+      if (typeof updateEmployeeSelects==='function') updateEmployeeSelects();
+    } else {
+      alert('קוד שגוי. נסה שוב.');
+      if (input){ input.value=''; input.focus(); }
+      return false;
+    }
+  } catch(e){ console.error('checkReportsPassword error:', e); return false; }
+  return false;
+}
+function checkDetailedReportsPassword(){
+  try {
+    var input = document.getElementById('detailedReportsPassword');
+    var val = input ? String(input.value||'').trim() : '';
+    if (val === '1986'){
       window.isDetailedReportsUnlocked = true;
-      var l = document.getElementById('detailedReportsLock');
-      var c = document.getElementById('detailedReportsContent');
-      if (l) l.style.display = 'none';
-      if (c) c.style.display = 'block';
-      // אם יש פונקציית אתחול, נקרא לה פעם אחת
-      setTimeout(function(){ try{ if (typeof initDetailedReportsPage==='function') initDetailedReportsPage(); }catch(e){} }, 100);
-    }catch(e){}
+      var lock = document.getElementById('detailedReportsLock');
+      var content = document.getElementById('detailedReportsContent');
+      if (lock) lock.style.display = 'none';
+      if (content) content.style.display = 'block';
+      setTimeout(function(){ if (typeof initDetailedReportsPage==='function') initDetailedReportsPage(); }, 100);
+    } else {
+      alert('קוד שגוי. נסה שוב.');
+      if (input){ input.value=''; input.focus(); }
+      return false;
+    }
+  } catch(e){ console.error('checkDetailedReportsPassword error:', e); return false; }
+  return false;
+}
+
+(function(){
+  function lockCancel(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    try{ if (!el.getAttribute('type')) el.setAttribute('type','button'); }catch(_){}
+    el.onclick = function(ev){
+      try{ ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); }catch(_){}
+      var input = document.getElementById('entryCodeInput')
+               || document.getElementById('adminPassword')
+               || document.getElementById('detailedReportsPassword');
+      if (input){ input.value=''; input.focus(); }
+      alert('צריך להזין קוד כדי להמשיך');
+      return false;
+    };
   }
-  // Override password checkers to no-op open
-  window.checkAdminPassword = function(){ openAdmin(); return false; };
-  window.checkDetailedReportsPassword = function(){ openDetailed(); return false; };
-  // On load, open both so שאין בקשת קוד ניהול
-  function initOpen(){ openAdmin(); openDetailed(); }
-  if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', initOpen); } else { initOpen(); }
+  ['entryCancelBtn','authCancelBtn','adminCancelBtn','detailedCancelBtn'].forEach(lockCancel);
+})();
+
+(function(){
+  function todayStr(){
+    var d=new Date();
+    var y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+dd;
+  }
+  function lockDateInputs(){
+    var root = document.getElementById('mainPage') || document;
+    var t = todayStr();
+    root.querySelectorAll('input[type="date"]').forEach(function(inp){
+      inp.min = t; inp.max = t; inp.value = t;
+      inp.addEventListener('change', function(){
+        if (inp.value !== t){ inp.value = t; alert('ניתן לדווח נוכחות רק להיום מהמסך הראשי.'); }
+      });
+    });
+  }
+  var origShow = window.showPage;
+  window.showPage = function(pageName){
+    try{
+      if (typeof origShow === 'function'){ origShow.apply(this, arguments); }
+      if (pageName === 'main'){ lockDateInputs(); }
+    }catch(e){ console.error(e); }
+  };
+  if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', lockDateInputs); } else { lockDateInputs(); }
 })();
 </script>
 
