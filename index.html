@@ -677,7 +677,7 @@
   border: none !important;
   border-radius: 12px;
   padding: 12px 16px;
-  font-weight: 700;
+  
   box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
 }
 #detailedReportsEnterBtn:hover { filter: brightness(1.05); transform: translateY(-1px); }
@@ -690,13 +690,20 @@
   border:none !important;
   border-radius:14px !important;
   padding:14px 18px !important;
-  font-weight:800 !important;
-  font-size:18px !important;
+  
+  
   width:100% !important;
   box-shadow: 0 8px 24px rgba(37,99,235,.35) !important;
 }
 #detailedReportsEnterBtn:hover{ filter:brightness(1.06); transform:translateY(-1px); }
 #detailedReportsEnterBtn:active{ transform:translateY(0); filter:brightness(.98); }
+</style><style>
+/* RB font fix: match site font on detailed open button */
+#detailedReportsEnterBtn{
+  font: inherit !important;
+  line-height: inherit !important;
+  letter-spacing: inherit !important;
+}
 </style></head>
 <body>
 <div class="header">
