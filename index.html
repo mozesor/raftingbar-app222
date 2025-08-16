@@ -669,7 +669,35 @@
 #eventsInlineTable tbody tr:nth-child(even){ background: #fafbff; }
 #eventsInlineTable tbody tr:hover{ background: #f0f3ff; }
     </style>
-<link href="icon-180x180.png" rel="apple-touch-icon" sizes="180x180"/><link href="icon-167x167.png" rel="apple-touch-icon" sizes="167x167"/><link href="icon-152x152.png" rel="apple-touch-icon" sizes="152x152"/><link href="icon-144x144.png" rel="apple-touch-icon" sizes="144x144"/></head>
+<link href="icon-180x180.png" rel="apple-touch-icon" sizes="180x180"/><link href="icon-167x167.png" rel="apple-touch-icon" sizes="167x167"/><link href="icon-152x152.png" rel="apple-touch-icon" sizes="152x152"/><link href="icon-144x144.png" rel="apple-touch-icon" sizes="144x144"/><style>
+/* Force blue primary look for the detailed reports 'פתח ניהול' button */
+#detailedReportsEnterBtn {
+  background: linear-gradient(90deg, #1ea0ff, #2563eb);
+  color: #fff !important;
+  border: none !important;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+}
+#detailedReportsEnterBtn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+#detailedReportsEnterBtn:active { transform: translateY(0); filter: brightness(0.98); }
+</style><style>
+/* Match Admin page CTA style for detailed 'פתח ניהול' */
+#detailedReportsEnterBtn{
+  background: linear-gradient(90deg,#1ea0ff 0%, #1e88ff 40%, #2563eb 100%) !important;
+  color:#fff !important;
+  border:none !important;
+  border-radius:14px !important;
+  padding:14px 18px !important;
+  font-weight:800 !important;
+  font-size:18px !important;
+  width:100% !important;
+  box-shadow: 0 8px 24px rgba(37,99,235,.35) !important;
+}
+#detailedReportsEnterBtn:hover{ filter:brightness(1.06); transform:translateY(-1px); }
+#detailedReportsEnterBtn:active{ transform:translateY(0); filter:brightness(.98); }
+</style></head>
 <body>
 <div class="header">
 <h1>🏄‍♂️ רפטינג בר</h1>
@@ -3222,7 +3250,6 @@ if (document.readyState === 'loading'){
   document.addEventListener('DOMContentLoaded', wireExportEventsBtn);
 } else { wireExportEventsBtn(); }
 </script>
-
 <script>
 (function(){
   function ddmmyyyy(key){
@@ -3311,8 +3338,6 @@ if (document.readyState === 'loading'){
   };
 })();
 </script>
-
-
 <script>
 // === Ensure employee list populates (bbEmployee & others) ===
 (function(){
@@ -3403,8 +3428,6 @@ if (document.readyState === 'loading'){
   }
 })();
 </script>
-
-
 <!-- RB_PATCH: cancel_harden + detailed_open_btn -->
 <script>
 (function () {
@@ -3451,8 +3474,8 @@ if (document.readyState === 'loading'){
       var btn = document.createElement('button');
       btn.id = 'detailedReportsEnterBtn';
       btn.className = 'btn';
-      btn.style.cssText = 'margin-top:10px;width:100%;';
-      btn.textContent = 'פתח ניהול';
+      btn.style.cssText='margin-top:10px;width:100%;';
+      btn.textContent = 'פתח ניהול 🔒';
       btn.onclick = function () {
         try { return checkDetailedReportsPassword(); }
         catch (e) { console.error(e); return false; }
@@ -3492,6 +3515,5 @@ if (document.readyState === 'loading'){
   };
 })();
 </script>
-
 </body>
 </html>
