@@ -3314,164 +3314,93 @@ if (document.readyState === 'loading'){
 
 
 <script>
-// ===== RaftingBar: Access code policy (drop-in patch) =====
-// One-time entry code: 97531
-// Admin/Detailed code (constant): 1986
+// === Ensure employee list populates (bbEmployee & others) ===
 (function(){
-  var ADMIN_CODE = '1986';
-  try{ window.adminPassword = ADMIN_CODE; }catch(e){}
+  function normalizeEmployees(arr){
+    if (!Array.isArray(arr)) return [];
+    // Support both array of strings or objects {id,name}
+    return arr.map(function(e){
+      if (typeof e === 'string') return { id: e, name: e };
+      var name = e.name || e.fullName || e.title || e.display || e.employee || e[0];
+      var id = e.id || e.employeeId || e.empId || e.key || name;
+      return { id: String(id||'').trim(), name: String(name||'').trim() };
+    }).filter(function(e){ return e.name; });
+  }
+  function getEmployees(){
+    if (Array.isArray(window.employees) && window.employees.length){
+      return normalizeEmployees(window.employees);
+    }
+    try {
+      var ls = JSON.parse(localStorage.getItem('employees')||'[]');
+      if (ls && ls.length) return normalizeEmployees(ls);
+    }catch(e){}
+    return [];
+  }
+  function fillSelect(select){
+    var list = getEmployees();
+    if (!select) return;
+    var valueBefore = select.value;
+    var html = '<option value="">בחר עובד…</option>';
+    for (var i=0;i<list.length;i++){
+      var e = list[i];
+      html += '<option value="'+(e.id||e.name).replace(/"/g,'&quot;')+'">'+e.name+'</option>';
+    }
+    select.innerHTML = html;
+    select.disabled = (list.length === 0);
+    select.style.pointerEvents = list.length ? 'auto' : 'none';
+    if (valueBefore) select.value = valueBefore;
+  }
+  function refreshEmployeeSelects(){
+    ['bbEmployee','employeeSelect','editEmployee','employeeFilter','eventEmployee'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el){ el.disabled=false; el.style.pointerEvents='auto'; fillSelect(el); }
+    });
+    document.querySelectorAll('select[data-employee-select], select.employee-select').forEach(function(el){
+      el.disabled=false; el.style.pointerEvents='auto'; fillSelect(el);
+    });
+    // Backfill UI any extra init
+    try{ if (typeof initBackfillUI==='function') initBackfillUI(); }catch(e){}
+  }
 
-  // Prevent remote password overrides: wrap loadDataFromSheet
+  // Hook after cloud load
   (function(){
     var orig = window.loadDataFromSheet;
     if (typeof orig === 'function'){
-      window.loadDataFromSheet = function(){
-        var r;
-        try { r = orig.apply(this, arguments); }
-        catch(e){ console.error(e); }
-        // enforce constant admin code after any load
-        try { window.adminPassword = ADMIN_CODE; } catch(e){}
-        if (r && typeof r.finally === 'function'){
-          return r.finally(function(){ try { window.adminPassword = ADMIN_CODE; } catch(e){} });
-        }
+      window.loadDataFromSheet = async function(){
+        var res = await orig.apply(this, arguments);
+        try { refreshEmployeeSelects(); } catch(e){ console.warn(e); }
+        return res;
+      };
+    }
+  })();
+
+  // After admin unlock
+  (function(){
+    var orig = window.checkAdminPassword;
+    if (typeof orig === 'function'){
+      window.checkAdminPassword = function(){
+        var r = orig.apply(this, arguments);
+        setTimeout(refreshEmployeeSelects, 200);
         return r;
       };
     }
   })();
 
-  // Override changeAdminPassword: code is fixed
-  window.changeAdminPassword = function(){
-    alert('קוד הניהול קבוע (1986) ולא ניתן לשינוי.');
-    return false;
-  };
+  // On page navigation
+  (function(){
+    var orig = window.showPage;
+    window.showPage = function(name){
+      try{ if (typeof orig === 'function') orig.apply(this, arguments); }catch(e){}
+      if (name === 'admin'){ setTimeout(refreshEmployeeSelects, 150); }
+    };
+  })();
 
-  // Make sure checkers use constant code
-  window.checkAdminPassword = function(){
-    try{
-      var input = document.getElementById('adminPassword');
-      var val = input ? String(input.value||'').trim() : '';
-      if (val === ADMIN_CODE){
-        window.isAdminUnlocked = true;
-        var l = document.getElementById('adminLock');
-        var c = document.getElementById('adminContent');
-        if (l) l.style.display = 'none';
-        if (c) c.style.display = 'block';
-        if (input){ input.value=''; }
-        if (typeof updateEmployeeSelects==='function') updateEmployeeSelects();
-        alert('נכנסת לעמוד הניהול בהצלחה');
-      } else {
-        if (input){ input.value=''; input.focus(); }
-        alert('קוד שגוי! נסה שוב');
-      }
-    }catch(e){ console.error(e); }
-    return false;
-  };
-
-  window.checkDetailedReportsPassword = function(){
-    try{
-      var input = document.getElementById('detailedReportsPassword');
-      var val = input ? String(input.value||'').trim() : '';
-      if (val === ADMIN_CODE){
-        window.isDetailedReportsUnlocked = true;
-        var l = document.getElementById('detailedReportsLock');
-        var c = document.getElementById('detailedReportsContent');
-        if (l) l.style.display = 'none';
-        if (c) c.style.display = 'block';
-        if (input){ input.value=''; }
-        setTimeout(function(){ try{ if (typeof initDetailedReportsPage==='function') initDetailedReportsPage(); }catch(e){} }, 100);
-        alert('נכנסת לדוחות המפורטים בהצלחה');
-      } else {
-        if (input){ input.value=''; input.focus(); }
-        alert('קוד שגוי! נסה שוב');
-      }
-    }catch(e){ console.error(e); }
-    return false;
-  };
-
-  // ----- One-time entry gate using existing auth overlay -----
-  function needEntry(){
-    try { return localStorage.getItem('entryUnlocked') !== '1'; }
-    catch(e){ return true; }
-  }
-  function showEntry(){
-    var ov = document.getElementById('authOverlay');
-    var input = document.getElementById('authCodeInput');
-    var ok = document.getElementById('authEnterBtn');
-    var cancel = document.getElementById('authCancelBtn');
-    if (!ov || !input || !ok || !cancel) return;
-    ov.style.display = 'flex';
-    function enter(){
-      var v = String(input.value||'').trim();
-      if (v === '97531'){
-        try{ localStorage.setItem('entryUnlocked','1'); }catch(e){}
-        ov.style.display = 'none';
-        // kick cloud connection after unlock
-        try{ if (typeof testConnection==='function') testConnection(); }catch(e){}
-      } else {
-        alert('קוד שגוי. נסה שוב.');
-        input.value='';
-        input.focus();
-      }
-    }
-    if (!ok._wired){
-      ok._wired = true;
-      ok.onclick = function(ev){ try{ ev.preventDefault(); }catch(_){ } enter(); return false; };
-    }
-    if (!cancel._wired){
-      cancel._wired = true;
-      // Cancel never unlocks
-      cancel.setAttribute('type','button');
-      cancel.onclick = function(ev){
-        try{ ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); }catch(_){}
-        input.value='';
-        input.focus();
-        alert('צריך להזין קוד כדי להמשיך');
-        return false;
-      };
-    }
-    if (!input._wired){
-      input._wired = true;
-      input.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); enter(); } });
-      setTimeout(function(){ input.focus(); }, 60);
-    }
-  }
-  // allow test via ?forceEntry=1
-  try{
-    var qs = new URLSearchParams(window.location.search);
-    if (qs.get('forceEntry') === '1'){ localStorage.removeItem('entryUnlocked'); }
-  }catch(e){}
+  // Initial attempt (in case employees already cached)
   if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ if (needEntry()) showEntry(); });
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(refreshEmployeeSelects, 800); });
   } else {
-    if (needEntry()) showEntry();
+    setTimeout(refreshEmployeeSelects, 800);
   }
-
-  // ---- Main page: restrict event date to TODAY only ----
-  function todayStr(){
-    var d=new Date(), y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
-    return y+'-'+m+'-'+dd;
-  }
-  function lockMainDate(){
-    var inp = document.getElementById('eventDate');
-    if (!inp) return;
-    var t = todayStr();
-    inp.min = t; inp.max = t; inp.value = t;
-    if (!inp._wired){
-      inp._wired = true;
-      inp.addEventListener('change', function(){
-        if (inp.value !== t){ inp.value = t; alert('ניתן להוסיף אירוע להיום בלבד מהמסך הראשי. (אירועים אחורה דרך עמוד הניהול)'); }
-      });
-    }
-  }
-  // Hook into navigation, if available
-  var _sp = window.showPage;
-  window.showPage = function(name){
-    try{ if (typeof _sp === 'function') _sp.apply(this, arguments); }catch(e){}
-    if (name === 'main') lockMainDate();
-  };
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', lockMainDate);
-  } else { lockMainDate(); }
 })();
 </script>
 
