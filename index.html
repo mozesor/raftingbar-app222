@@ -902,81 +902,7 @@
 </div>
 </div>
 <!-- עמוד ניהול -->
-<div class="page" id="adminPage">
-<!-- מסך נעילה -->
-<div class="card" id="adminLock" style="display: block;">
-<h2>🔒 עמוד ניהול מוגן</h2>
-<p style="text-align: center; color: #666; margin-bottom: 20px;">
-                    הזן קוד גישה לניהול המערכת
-                </p>
-<div class="form-group">
-<label>קוד גישה:</label>
-<input id="adminPassword" maxlength="6" placeholder="הזן קוד גישה" type="password"/>
-</div>
-<button class="btn btn-admin" onclick="checkAdminPassword()" style="width: 100%;">
-                    🔓 פתח ניהול
-                </button>
-<div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 10px; font-size: 14px; color: #1976d2;">
-                    💡 <strong>טיפ:</strong> הקוד ברירת המחדל הוא: <strong>1234</strong><br/>
-                    ניתן לשנות בהגדרות המערכת
-                </div>
-</div>
-<!-- תוכן הניהול -->
-<div id="adminContent" style="display: block;">
-<div class="card">
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-<h2 style="margin: 0;">⚙️ ניהול עובדים</h2>
-<button class="btn" onclick="lockAdmin()" style="background: #f44336; color: white; padding: 8px 12px; font-size: 14px;">
-                            🔒 נעל
-                        </button>
-</div>
-<div style="background: #e3f2fd; border-radius: 8px; padding: 10px; margin-bottom: 15px; text-align: center; font-size: 0.9em; color: #1976d2;">
-                        📡 העובדים מסונכרנים אוטומטית בין כל המכשירים
-                    </div>
-<div class="form-group">
-<label>הוסף עובד חדש:</label>
-<input id="newEmployeeName" placeholder="שם העובד החדש" type="text"/>
-</div>
-<button class="btn btn-admin" onclick="addEmployee()" style="width: 100%; margin-bottom: 15px;">
-                        ➕ הוסף עובד
-                    </button>
-<div class="form-group">
-<label>הסר עובד:</label>
-<select id="removeEmployeeSelect">
-<option value="">-- בחר עובד להסרה --</option>
-</select>
-</div>
-<button class="btn btn-checkout" onclick="removeEmployee()" style="width: 100%; margin-bottom: 20px;">
-                        🗑️ הסר עובד
-                    </button>
-<button class="btn btn-checkout" onclick="clearAll()" style="width: 100%;">
-                        🔄 איפוס נתונים
-                    </button>
-</div>
-<div class="card">
-<h2>🔄 סנכרון</h2>
-<p style="text-align: center; color: #666; margin-bottom: 15px;">
-                        עובדים ונתוני נוכחות מסונכרנים בזמן אמת
-                    </p>
-<button class="btn btn-admin" onclick="forcSync()" style="width: 100%;">
-                        ⚡ סנכרון ידני
-                    </button>
-</div>
-<div class="card" id="adminRetroEventCard"><h2>🕒 הוספת אירוע רטרואקטיבית</h2><div class="form-group"><label>בחר עובד:</label><select id="adminEventEmployee"></select></div><div class="form-group"><label>תאריך האירוע:</label><input id="adminEventDate" type="date"/></div><button class="btn btn-admin" onclick="addRetroEvent()" style="width:100%;margin-bottom:15px;">➕ הוסף אירוע ליום שנבחר</button></div><div class="card">
-<h2>🔐 אבטחה</h2>
-<div class="form-group">
-<label>שנה קוד גישה:</label>
-<input id="newAdminPassword" maxlength="6" placeholder="קוד חדש (4-6 ספרות)" type="password"/>
-</div>
-<button class="btn btn-admin" onclick="changeAdminPassword()" style="width: 100%;">
-                        🔑 שנה קוד
-                    </button>
-<div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 8px; font-size: 13px; color: #856404;">
-                        ⚠️ זכור את הקוד החדש! אין אפשרות לשחזר אותו
-                    </div>
-</div>
-</div>
-</div>
+
 <!-- ניווט תחתון -->
 <div class="navigation">
 <button class="nav-btn active" onclick="showPage('main')">
@@ -3016,7 +2942,81 @@ function setEventDateDefault(){
 }
 (function(){ var _u = updateAll; updateAll = function(){ _u(); updateTodayEventsUI(); setEventDateDefault(); }; })();
 
-</script>
+</script><div class="page" id="adminPage">
+<!-- מסך נעילה -->
+<div class="card" id="adminLock" style="display: block;">
+<h2>🔒 עמוד ניהול מוגן</h2>
+<p style="text-align: center; color: #666; margin-bottom: 20px;">
+                    הזן קוד גישה לניהול המערכת
+                </p>
+<div class="form-group">
+<label>קוד גישה:</label>
+<input id="adminPassword" maxlength="6" placeholder="הזן קוד גישה" type="password"/>
+</div>
+<button class="btn btn-admin" onclick="checkAdminPassword()" style="width: 100%;">
+                    🔓 פתח ניהול
+                </button>
+<div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 10px; font-size: 14px; color: #1976d2;">
+                    💡 <strong>טיפ:</strong> הקוד ברירת המחדל הוא: <strong>1234</strong><br/>
+                    ניתן לשנות בהגדרות המערכת
+                </div>
+</div>
+<!-- תוכן הניהול -->
+<div id="adminContent" style="display: block;">
+<div class="card">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+<h2 style="margin: 0;">⚙️ ניהול עובדים</h2>
+<button class="btn" onclick="lockAdmin()" style="background: #f44336; color: white; padding: 8px 12px; font-size: 14px;">
+                            🔒 נעל
+                        </button>
+</div>
+<div style="background: #e3f2fd; border-radius: 8px; padding: 10px; margin-bottom: 15px; text-align: center; font-size: 0.9em; color: #1976d2;">
+                        📡 העובדים מסונכרנים אוטומטית בין כל המכשירים
+                    </div>
+<div class="form-group">
+<label>הוסף עובד חדש:</label>
+<input id="newEmployeeName" placeholder="שם העובד החדש" type="text"/>
+</div>
+<button class="btn btn-admin" onclick="addEmployee()" style="width: 100%; margin-bottom: 15px;">
+                        ➕ הוסף עובד
+                    </button>
+<div class="form-group">
+<label>הסר עובד:</label>
+<select id="removeEmployeeSelect">
+<option value="">-- בחר עובד להסרה --</option>
+</select>
+</div>
+<button class="btn btn-checkout" onclick="removeEmployee()" style="width: 100%; margin-bottom: 20px;">
+                        🗑️ הסר עובד
+                    </button>
+<button class="btn btn-checkout" onclick="clearAll()" style="width: 100%;">
+                        🔄 איפוס נתונים
+                    </button>
+</div>
+<div class="card">
+<h2>🔄 סנכרון</h2>
+<p style="text-align: center; color: #666; margin-bottom: 15px;">
+                        עובדים ונתוני נוכחות מסונכרנים בזמן אמת
+                    </p>
+<button class="btn btn-admin" onclick="forcSync()" style="width: 100%;">
+                        ⚡ סנכרון ידני
+                    </button>
+</div>
+<div class="card" id="adminRetroEventCard"><h2>🕒 הוספת אירוע רטרואקטיבית</h2><div class="form-group"><label>בחר עובד:</label><select id="adminEventEmployee"></select></div><div class="form-group"><label>תאריך האירוע:</label><input id="adminEventDate" type="date"/></div><button class="btn btn-admin" onclick="addRetroEvent()" style="width:100%;margin-bottom:15px;">➕ הוסף אירוע ליום שנבחר</button></div><div class="card">
+<h2>🔐 אבטחה</h2>
+<div class="form-group">
+<label>שנה קוד גישה:</label>
+<input id="newAdminPassword" maxlength="6" placeholder="קוד חדש (4-6 ספרות)" type="password"/>
+</div>
+<button class="btn btn-admin" onclick="changeAdminPassword()" style="width: 100%;">
+                        🔑 שנה קוד
+                    </button>
+<div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 8px; font-size: 13px; color: #856404;">
+                        ⚠️ זכור את הקוד החדש! אין אפשרות לשחזר אותו
+                    </div>
+</div>
+</div>
+</div>
 <script>
 // --- Safe patches: do not change structure, just override behavior ---
 
@@ -3522,89 +3522,5 @@ if (document.readyState === 'loading'){
   };
 })();
 </script>
-
-<!-- RB_PATCH: admin_retro_event_only -->
-<script>
-(function(){
-  function byId(id){ return document.getElementById(id); }
-  function todayStr(){ var d=new Date(),y=d.getFullYear(),m=('0'+(d.getMonth()+1)).slice(-2),dd=('0'+d.getDate()).slice(-2); return y+'-'+m+'-'+dd; }
-
-  // Fill the admin retro event employee list from window.employees
-  function fillAdminEventEmployees(){
-    var sel = byId('adminEventEmployee');
-    if (!sel) return;
-    var current = sel.value;
-    sel.innerHTML = '<option value="">-- בחר עובד --</option>';
-    (window.employees || []).forEach(function(name){
-      var opt = document.createElement('option');
-      opt.value = name; opt.text = name;
-      sel.appendChild(opt);
-    });
-    if (current) sel.value = current;
-  }
-
-  // Public function used by the button onclick="addRetroEvent()"
-  window.addRetroEvent = function(){
-    var emp  = (byId('adminEventEmployee')||{}).value;
-    var dateKey = (byId('adminEventDate')||{}).value || todayStr();
-    if (!emp){ try{ showAlert('אנא בחר עובד','error'); }catch(_){ alert('אנא בחר עובד'); } return; }
-    if (!dateKey){ try{ showAlert('אנא בחר תאריך','error'); }catch(_){ alert('אנא בחר תאריך'); } return; }
-
-    try{
-      // Ensure data structs exist and increment event counter
-      window.attendanceData = window.attendanceData || {};
-      if (!attendanceData[emp]) attendanceData[emp] = {};
-      if (!attendanceData[emp][dateKey]) attendanceData[emp][dateKey] = {};
-      attendanceData[emp][dateKey].events = (attendanceData[emp][dateKey].events || 0) + 1;
-
-      // Save locally and refresh UI
-      try{ if (typeof saveLocalData==='function') saveLocalData(); }catch(e){}
-      try{ if (typeof updateAll==='function') updateAll(); }catch(e){}
-
-      // Record to cloud if initialized
-      try{
-        if (window.isInitialized && typeof recordToSheet==='function'){
-          var now = new Date();
-          recordToSheet(emp, 'event', now.toISOString(), dateKey, now.toLocaleTimeString('he-IL'));
-          // optional sync refresh (non-blocking)
-          setTimeout(function(){ try{ if (typeof loadDataFromSheet==='function') loadDataFromSheet(); }catch(e){} }, 1500);
-        }
-      }catch(e){}
-
-      try{ if (typeof showAlert==='function') showAlert('נוסף אירוע ל-' + emp + ' בתאריך ' + dateKey, 'success'); else alert('נוסף אירוע'); }catch(e){}
-    }catch(err){
-      console.error('addRetroEvent error:', err);
-      try{ if (typeof showAlert==='function') showAlert('שגיאה בשמירה','error'); else alert('שגיאה בשמירה'); }catch(e){}
-    }
-  };
-
-  // Init: default date (today if empty) and populate employee list
-  function initAdminRetro(){
-    try{
-      var d = byId('adminEventDate');
-      if (d && !d.value){ d.value = todayStr(); }
-    }catch(e){}
-    fillAdminEventEmployees();
-  }
-
-  if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', initAdminRetro); }
-  else { initAdminRetro(); }
-
-  // Keep select in sync when the app updates employees
-  var _updateEmployeeSelects = window.updateEmployeeSelects;
-  window.updateEmployeeSelects = function(){
-    try{ if (typeof _updateEmployeeSelects==='function') _updateEmployeeSelects(); }catch(e){}
-    fillAdminEventEmployees();
-  };
-
-  // Re-apply when navigating to admin page (SPA)
-  var _sp = window.showPage;
-  window.showPage = function(name){
-    try{ if (typeof _sp==='function') _sp.apply(this, arguments); }catch(e){}
-    if (name === 'admin'){ setTimeout(initAdminRetro, 50); }
-  };
-})();
-</script>
-
 </body>
 </html>
