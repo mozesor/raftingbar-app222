@@ -5,6 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>רפטינג בר - שעון נוכחות</title>
+<link href="manifest.json" rel="manifest"/>
 <meta content="#667eea" name="theme-color"/>
 <meta content="yes" name="mobile-web-app-capable"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
@@ -452,15 +453,15 @@
         }
 
         .chart-container {
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px 16px 10px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  position: relative;
-  background-image: linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px);
-  background-size: 80px 100%;
-}
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: 300px;
+            position: relative;
+            overflow-y: auto;
+        }
 
         .chart-bar {
             background: linear-gradient(45deg, #667eea, #764ba2);
@@ -481,7 +482,12 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
-        .chart-label { display:none; }
+        .chart-label {
+            font-size: 12px;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
 
         .export-section {
             background: white;
@@ -647,28 +653,7 @@
 .auth-actions { display:flex; gap:10px; margin-top:12px; }
 .auth-actions button { flex:1; padding:12px; border:none; border-radius:10px; font-weight:700; }
 .auth-input { width: 100%; padding: 14px; border:2px solid #ddd; border-radius:10px; font-size:16px; }
-
-/* New readable layout */
-.chart-row { display:flex; align-items:center; gap: 10px; margin: 10px 0; }
-.chart-meta { width: 140px; flex-shrink:0; text-align:right; }
-.chart-meta-top { font-weight:800; color:#333; font-size:14px; }
-.chart-meta-sub { color:#777; font-size:12px; }
-.chart-bar { flex:1; position:relative; min-height:34px; border-radius:10px; background: linear-gradient(45deg, #667eea, #764ba2); display:flex; align-items:center; }
-.chart-value { position:absolute; right:10px; font-weight:800; color:#fff; }
-.chart-bar.empty { background:#f1f1f5; }
-
-
-/* Events inline table */
-#eventsInlineTable thead th {
-  position: sticky;
-  top: 0;
-  background: #f7f8ff;
-  border-bottom: 2px solid #667eea;
-  z-index: 1;
-}
-#eventsInlineTable tbody tr:nth-child(even){ background: #fafbff; }
-#eventsInlineTable tbody tr:hover{ background: #f0f3ff; }
-    </style>
+</style>
 <link href="icon-180x180.png" rel="apple-touch-icon" sizes="180x180"/><link href="icon-167x167.png" rel="apple-touch-icon" sizes="167x167"/><link href="icon-152x152.png" rel="apple-touch-icon" sizes="152x152"/><link href="icon-144x144.png" rel="apple-touch-icon" sizes="144x144"/></head>
 <body>
 <div class="header">
@@ -745,7 +730,9 @@
 <div class="employee-grid" id="employeeGrid"></div>
 </div>
 </div>
+<button class="btn btn-admin" onclick="checkReportsPassword()" style="width: 100%;">🔓 פתח דוחות</button>
 </div>
+
 <!-- עמוד דוח אישי -->
 <div class="page" id="selfPage">
 <div class="card">
@@ -778,8 +765,11 @@
                 </p>
 <div class="form-group">
 <label>קוד גישה:</label>
-<input id="detailedReportsPassword" maxlength="6" placeholder="הזן קוד גישה" type="password"/>
-</div>
+<input id="detailedReportsPassword" maxlength="6" placeholder="הזן קוד גישה" type="password">
+</input></div>
+<button class="btn btn-admin" onclick="checkDetailedReportsPassword()" style="width: 100%;">
+                    🔓 פתח דוחות
+                </button>
 <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 10px; font-size: 14px; color: #1976d2;">
                     💡 <strong>טיפ:</strong> הקוד ברירת המחדל הוא: <strong>1234</strong><br/>
                     ניתן לשנות בהגדרות המערכת
@@ -863,7 +853,7 @@
                             📋 דוח מפורט מלא
                         </button>
 </div>
-<div class="card" id="eventsInlineSection" style="margin-top:16px;"><h2>🗂️ אירועים לפי תאריכים ועובד</h2><div style="color:#555; margin-bottom:8px; font-size:14px;">התצוגה מכבדת את טווח התאריכים והסינון לעובד (אם נבחר).</div><div class="events-table-wrap" style="max-height:340px; overflow:auto; background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06);"><table class="data-table" id="eventsInlineTable" style="width:100%; border-collapse:separate; border-spacing:0;"></table></div></div></div>
+</div>
 </div>
 </div>
 <!-- עמוד ניהול -->
@@ -927,7 +917,7 @@
                         ⚡ סנכרון ידני
                     </button>
 </div>
-<div class="card" id="adminRetroEventCard"><h2>🕒 הוספת אירוע רטרואקטיבית</h2><div class="form-group"><label>בחר עובד:</label><select id="adminEventEmployee"></select></div><div class="form-group"><label>תאריך האירוע:</label><input id="adminEventDate" type="date"/></div><button class="btn btn-admin" onclick="addRetroEvent()" style="width:100%;margin-bottom:15px;">➕ הוסף אירוע ליום שנבחר</button></div><div class="card">
+<div class="card">
 <h2>🔐 אבטחה</h2>
 <div class="form-group">
 <label>שנה קוד גישה:</label>
@@ -942,6 +932,7 @@
 </div>
 </div>
 </div>
+
 <!-- ניווט תחתון -->
 <div class="navigation">
 <button class="nav-btn active" onclick="showPage('main')">
@@ -2982,335 +2973,5 @@ function setEventDateDefault(){
 (function(){ var _u = updateAll; updateAll = function(){ _u(); updateTodayEventsUI(); setEventDateDefault(); }; })();
 
 </script>
-<script>
-// --- Safe patches: do not change structure, just override behavior ---
-
-// 1) Stable showPage
-window.showPage = function(pageName) {
-  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-  document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
-  var page = document.getElementById(pageName + 'Page');
-  if (page) page.classList.add('active');
-
-  var navButtons = document.querySelectorAll('.nav-btn');
-  if (navButtons.length >= 5){
-    if (pageName === 'main') navButtons[0].classList.add('active');
-    else if (pageName === 'employees') navButtons[1].classList.add('active');
-    else if (pageName === 'self' || pageName === 'reports') navButtons[2].classList.add('active');
-    else if (pageName === 'detailedReports') navButtons[3].classList.add('active');
-    else if (pageName === 'admin') navButtons[4].classList.add('active');
-  }
-
-  if (pageName === 'admin') {
-    if (!window.isAdminUnlocked) {
-      var l = document.getElementById('adminLock'), c = document.getElementById('adminContent');
-      if (l) l.style.display = 'block';
-      if (c) c.style.display = 'none';
-      setTimeout(function(){ var inp = document.getElementById('adminPassword'); if (inp) inp.focus(); }, 100);
-    } else {
-      var l2 = document.getElementById('adminLock'), c2 = document.getElementById('adminContent');
-      if (l2) l2.style.display = 'none';
-      if (c2) c2.style.display = 'block';
-      if (typeof updateEmployeeSelects === 'function') updateEmployeeSelects();
-    }
-  } else if (pageName === 'detailedReports') {
-    if (!window.isDetailedReportsUnlocked) {
-      var l3 = document.getElementById('detailedReportsLock'), c3 = document.getElementById('detailedReportsContent');
-      if (l3) l3.style.display = 'block';
-      if (c3) c3.style.display = 'none';
-      setTimeout(function(){ var inp = document.getElementById('detailedReportsPassword'); if (inp) inp.focus(); }, 100);
-    } else {
-      var l4 = document.getElementById('detailedReportsLock'), c4 = document.getElementById('detailedReportsContent');
-      if (l4) l4.style.display = 'none';
-      if (c4) c4.style.display = 'block';
-      setTimeout(function(){ if (typeof initDetailedReportsPage==='function') initDetailedReportsPage(); }, 100);
-    }
-  }
-};
-
-// 2) Cancel button should not close auth overlay
-(function(){
-  var cancel = document.getElementById('authCancelBtn');
-  if (cancel){
-    cancel.onclick = function(e){
-      e.preventDefault();
-      var input = document.getElementById('authCodeInput') || document.getElementById('adminPassword') || document.getElementById('detailedReportsPassword');
-      if (input){ input.value=''; input.focus(); }
-      if (typeof showAlert === 'function') showAlert('יש להזין קוד כדי להמשיך', 'warning');
-    };
-  }
-})();
-
-// 3) Admin: populate retroactive event employee list when updating selects
-(function(){
-  var original = window.updateEmployeeSelects;
-  window.updateEmployeeSelects = function(){
-    if (typeof original === 'function') original();
-    try {
-      var adminSelect = document.getElementById('adminEventEmployee');
-      var employees = (window.employees || []);
-      if (adminSelect){
-        var val = adminSelect.value;
-        adminSelect.innerHTML = '<option value="">-- בחר עובד --</option>';
-        for (var i=0;i<employees.length;i++){
-          var opt = document.createElement('option');
-          opt.value = employees[i];
-          opt.text = employees[i];
-          adminSelect.appendChild(opt);
-        }
-        adminSelect.value = val;
-      }
-    } catch(e){}
-  };
-})();
-
-// 4) Main: limit "Add Event" to today only
-(function(){
-  var origAdd = window.addEventForEmployee;
-  window.addEventForEmployee = function(){
-    var today = (typeof getCurrentDate==='function') ? getCurrentDate() : new Date().toISOString().slice(0,10);
-    var evDate = document.getElementById('eventDate');
-    if (evDate){ evDate.value = today; evDate.min = today; evDate.max = today; }
-    if (typeof origAdd === 'function') return origAdd.apply(this, arguments);
-  };
-  window.addEventListener('load', function(){
-    try{
-      var today = (typeof getCurrentDate==='function') ? getCurrentDate() : new Date().toISOString().slice(0,10);
-      var ev = document.getElementById('eventDate');
-      if (ev){ ev.value = today; ev.min = today; ev.max = today; }
-    }catch(e){}
-  });
-})();
-
-// 5) Detailed Reports chart: chronological order + min width + 1 decimal
-
-window.updateDetailedHoursChart = function(data){
-  var chartDiv = document.getElementById('detailedHoursChart');
-  if (!chartDiv) return;
-  if (!data || !data.dailyData || !data.dailyData.length){
-    chartDiv.innerHTML = '<p style="text-align:center;color:#666;">אין נתונים להצגה</p>';
-    return;
-  }
-  // sort by date safely
-  data.dailyData.sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
-
-  var maxHours = 0;
-  for (var i=0;i<data.dailyData.length;i++){
-    var v = Number(data.dailyData[i].totalHours||0);
-    if (v>maxHours) maxHours = v;
-  }
-  if (maxHours === 0) maxHours = 1;
-
-  function pad2(n){ n = Number(n)||0; return (n<10?'0':'')+n; }
-  var dayNames = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-
-  var html = '';
-  for (var i=0;i<data.dailyData.length;i++){
-    var d = data.dailyData[i];
-    var parts = (d.date||'').split('-'); // YYYY-MM-DD
-    var y = Number(parts[0]||0), m = Number(parts[1]||1), dd = Number(parts[2]||1);
-    // construct date to avoid timezone shifts
-    var dow = new Date(y, m-1, dd).getDay();
-    var dayName = dayNames[dow || 0];
-    var dateDisplay = pad2(dd) + '/' + pad2(m);
-
-    var value = Math.round(Number(d.totalHours||0)*10)/10;
-    var width = value>0 ? (value/maxHours)*100 : 0;
-    if (value>0 && width<6) width = 6;
-
-    var workers = Number(d.workers||0);
-
-    html += '<div class="chart-row">';
-    html +=   '<div class="chart-meta">'
-            +   '<div class="chart-meta-top">' + dayName + ' ' + dateDisplay + '</div>'
-            +   '<div class="chart-meta-sub">' + (workers? ('(' + workers + ' עובדים)') : '&nbsp;') + '</div>'
-            + '</div>';
-    html +=   '<div class="chart-bar' + (value>0?'':' empty') + '" style="width:' + width + '%;">'
-            +   '<span class="chart-value">' + (value>0 ? (value + ' שעות') : '—') + '</span>'
-            + '</div>';
-    html += '</div>';
-  }
-
-  chartDiv.innerHTML = html;
-  chartDiv.scrollTop = 0;
-};
-
-
-// 6) Export (current): include events if present
-(function(){
-  var orig = window.exportDetailedCurrent;
-  window.exportDetailedCurrent = function(){
-    try{
-      var rng = (typeof getDetailedDateRange==='function') ? getDetailedDateRange() : null;
-      var selEmpEl = document.getElementById('detailedEmployeeFilter');
-      var selected = selEmpEl ? selEmpEl.value : '';
-      var rep = (typeof generateDetailedReportData==='function')
-        ? generateDetailedReportData(rng && rng.startDate, rng && rng.endDate, selected)
-        : (orig && orig()) || {employees:[]};
-
-      var rows = rep.employees || [];
-      var headers = ['עובד','סה"כ שעות','ימי עבודה','ממוצע יומי','שעות נוספות','ימים לא נסגרו'];
-      var hasEv = rows.some(function(e){ return e && (e.totalEvents || (e.eventDates && e.eventDates.length)); });
-      if (hasEv) headers = headers.concat(['סה"כ אירועים','תאריכי אירועים']);
-      var out = [headers];
-      for (var i=0;i<rows.length;i++){
-        var e = rows[i] || {};
-        var r = [
-          e.name || '',
-          Math.round(Number(e.totalHours||0)*10)/10,
-          Number(e.workDays||0),
-          Math.round(Number(e.averageHours||0)*10)/10,
-          Math.round(Number(e.overtimeHours||0)*10)/10,
-          Number(e.missingDays||0)
-        ];
-        if (hasEv){
-          var dates = (e.eventDates||[]).map(function(ed){ return (ed.date||'') + (ed.count>1? ' ('+ed.count+')' : ''); }).join(', ');
-          r.push(Number(e.totalEvents||0), dates || '-');
-        }
-        out.push(r);
-      }
-      if (typeof downloadCSV === 'function') downloadCSV(out, 'detailed-current.csv');
-    }catch(err){
-      if (typeof showAlert==='function') showAlert('ייצוא נכשל: '+err, 'error');
-    }
-  };
-})();
-</script>
-<script>
-(function(){
-  function wire(){
-    var btn = document.getElementById('exportEventsBtn');
-    if (btn && typeof window.exportEventsReport === 'function'){
-      btn.addEventListener('click', window.exportEventsReport);
-    }
-  }
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', wire);
-  } else {
-    wire();
-  }
-})();
-</script>
-<script>
-(function(){
-  function wire(){
-    var btn = document.getElementById('exportEventsBtn');
-    if (btn && typeof window.exportEventsReport === 'function' && !btn._wired){
-      btn._wired = true;
-      btn.addEventListener('click', window.exportEventsReport);
-    }
-  }
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', wire);
-  } else {
-    wire();
-  }
-})();
-</script>
-<script>
-function wireExportEventsBtn(){
-  var btn = document.getElementById('exportEventsBtn');
-  if (btn && !btn._wired){
-    btn._wired = true;
-    btn.addEventListener('click', function(ev){
-      try{ ev.preventDefault(); }catch(e){}
-      if (typeof window.exportEventsReport === 'function') window.exportEventsReport();
-    });
-  }
-}
-if (document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', wireExportEventsBtn);
-} else { wireExportEventsBtn(); }
-</script>
-
-<script>
-(function(){
-  function ddmmyyyy(key){
-    if (!key) return '';
-    var p = key.split('-'); // YYYY-MM-DD
-    var y=p[0]||'', m=p[1]||'', d=p[2]||'';
-    if ((''+m).length===1) m='0'+m;
-    if ((''+d).length===1) d='0'+d;
-    return d + '/' + m + '/' + y;
-  }
-  function getData(){
-    try {
-      if (window.attendanceData && typeof window.attendanceData==='object' && Object.keys(window.attendanceData).length) {
-        return window.attendanceData;
-      }
-      return JSON.parse(localStorage.getItem('attendanceData')||'{}');
-    } catch(e){ return {}; }
-  }
-  function inRange(key, start, end){
-    if (!start && !end) return true;
-    if (start && key < start) return false;
-    if (end && key > end) return false;
-    return true;
-  }
-  function renderEventsInline(){
-    var table = document.getElementById('eventsInlineTable');
-    if (!table) return;
-    var range = (typeof getDetailedDateRange==='function') ? getDetailedDateRange() : null;
-    var start = range && range.startDate ? range.startDate : null;
-    var end   = range && range.endDate ? range.endDate   : null;
-    var selectedEmp = (document.getElementById('detailedEmployeeFilter')||{}).value || '';
-    var data = getData();
-
-    var rows = [];
-    var emps = Object.keys(data||{});
-    for (var e=0;e<emps.length;e++){
-      var emp = emps[e];
-      if (selectedEmp && emp !== selectedEmp) continue;
-      var days = data[emp] || {};
-      var dates = Object.keys(days||{});
-      for (var i=0;i<dates.length;i++){
-        var key = dates[i];
-        if (!inRange(key, start, end)) continue;
-        var day = days[key] || {};
-        var cnt = Number(day.events||0);
-        if (cnt>0){
-          rows.push({date:key, emp:emp, count:cnt});
-        }
-      }
-    }
-    // sort by date asc then emp
-    rows.sort(function(a,b){ if (a.date===b.date) return a.emp.localeCompare(b.emp,'he'); return a.date.localeCompare(b.date); });
-
-    var html = '<thead><tr><th style="width:120px;">תאריך</th><th>עובד</th><th style="width:140px;">אירועים ביום</th></tr></thead><tbody>';
-    if (!rows.length){
-      html += '<tr><td colspan="3" style="text-align:center; color:#666;">אין אירועים להצגה בטווח/סינון הנוכחי</td></tr>';
-    } else {
-      for (var r=0;r<rows.length;r++){
-        var row = rows[r];
-        html += '<tr>' +
-          '<td><strong>' + ddmmyyyy(row.date) + '</strong></td>' +
-          '<td>' + row.emp + '</td>' +
-          '<td>' + row.count + '</td>' +
-        '</tr>';
-      }
-    }
-    html += '</tbody>';
-    table.innerHTML = html;
-  }
-  // expose
-  window.renderEventsInline = renderEventsInline;
-
-  // hook after detailed reports refresh
-  var origInit = window.initDetailedReportsPage;
-  window.initDetailedReportsPage = function(){
-    if (typeof origInit === 'function') origInit();
-    // wire change listeners once
-    if (!window._eventsInlineWired){
-      window._eventsInlineWired = true;
-      ['detailedStartDate','detailedEndDate','detailedEmployeeFilter'].forEach(function(id){
-        var el = document.getElementById(id);
-        if (el){ el.addEventListener('change', renderEventsInline); el.addEventListener('input', renderEventsInline); }
-      });
-    }
-    renderEventsInline();
-  };
-})();
-</script>
-
-</body>
+<script defer="True" src="entry_gate.js"></script></body>
 </html>
