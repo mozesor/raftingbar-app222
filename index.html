@@ -3603,8 +3603,7 @@ if (document.readyState === 'loading'){
 <script>
 (function(){
   "use strict";
-  // Adds previous/next month controls to the Detailed Reports page without touching existing logic.
-  var MONTH_STATE = { offset: 0 }; // 0 = current month, -1 = previous, etc.
+  var MONTH_STATE = { offset: 0 };
 
   function byId(id){ return document.getElementById(id); }
   function qs(sel, root){ return (root||document).querySelector(sel); }
@@ -3620,9 +3619,7 @@ if (document.readyState === 'loading'){
   }
   function monthEnd(date, offset){
     var y = date.getFullYear(), m = date.getMonth() + (offset||0);
-    // last day of month: day 0 of next month
     var last = new Date(y, m+1, 0);
-    // If target is current month, end is "today"
     var today = new Date();
     var isCurrent = (new Date(y, m, 1).getMonth() === today.getMonth()) && (new Date(y, m, 1).getFullYear() === today.getFullYear());
     return isCurrent ? today : last;
@@ -3636,13 +3633,15 @@ if (document.readyState === 'loading'){
   }
 
   function ensureCustomVisible(){
-    var period = byId('detailedPeriodFilter');
+    var period = byId('detailedPeriodFilter') || byId('reportsPeriodFilter');
     if (period){ period.value = 'custom'; }
     if (typeof toggleDetailedCustomDateRange === 'function'){ try { toggleDetailedCustomDateRange(); } catch(e){} }
+    if (typeof toggleReportsCustomDateRange === 'function'){ try { toggleReportsCustomDateRange(); } catch(e){} }
   }
 
-  function refreshDetailed(){
-    if (typeof updateDetailedReports === 'function'){ try { updateDetailedReports(); } catch(e){ console.error(e); } }
+  function refreshReports(){
+    var fns = [window.updateDetailedReports, window.updateReportsPage, window.updateReports, window.updateReportsSummary];
+    for (var i=0;i<fns.length;i++){ if (typeof fns[i] === 'function'){ try{ fns[i](); }catch(e){} } }
   }
 
   function applyMonth(offset){
@@ -3651,51 +3650,53 @@ if (document.readyState === 'loading'){
     var s = monthStart(base, offset);
     var e = monthEnd(base, offset);
     ensureCustomVisible();
-    setInputValue('detailedStartDate', s);
-    setInputValue('detailedEndDate', e);
+    setInputValue('detailedStartDate', s); setInputValue('detailedEndDate', e);
+    setInputValue('reportsStartDate', s);  setInputValue('reportsEndDate', e);
     var label = byId('rbMonthLabel');
     if (label){ label.textContent = formatHebMonth(s); }
-    refreshDetailed();
+    refreshReports();
   }
 
-  function shiftMonth(delta){
-    applyMonth((MONTH_STATE.offset||0) + delta);
+  function shiftMonth(delta){ applyMonth((MONTH_STATE.offset||0) + delta); }
+
+  function findFiltersContainer(){
+    return qs('.detailed-reports-filters')
+        || byId('reportsFilters')
+        || qs('#reportsContent .filters')
+        || qs('#reportsPage .filters')
+        || qs('#reportsContent')
+        || qs('#reportsPage');
   }
 
   function ensureMonthNav(){
-    var filters = qs('.detailed-reports-filters');
-    if (!filters) return;
-    if (byId('rbMonthNav')) return; // already added
+    var container = findFiltersContainer();
+    if (!container) return;
+    if (byId('rbMonthNav')) return;
 
-    // Build nav row
     var row = document.createElement('div');
     row.className = 'filter-row';
     row.id = 'rbMonthNav';
     row.innerHTML = ''
-      + '<div class="filter-group" style="grid-column: 1 / -1; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">'
+      + '<div class="filter-group" style="grid-column: 1 / -1; display:flex; flex-direction:row; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-start;">'
       + '  <button class="btn" id="rbPrevMonth" type="button">◀️ חודש קודם</button>'
       + '  <button class="btn" id="rbThisMonth" type="button">⬅️ החודש</button>'
       + '  <button class="btn" id="rbNextMonth" type="button">חודש הבא ▶️</button>'
       + '  <span id="rbMonthLabel" style="font-weight:700; padding:6px 10px; background:#f1f5f9; border-radius:8px;"></span>'
       + '</div>';
 
-    // Insert after the first filter row (period+employee)
-    var firstRow = qs('.detailed-reports-filters .filter-row');
+    var firstRow = qs('.detailed-reports-filters .filter-row') || qs('#reportsFilters .filter-row') || null;
     if (firstRow && firstRow.parentNode) { firstRow.parentNode.insertBefore(row, firstRow.nextSibling); }
-    else { filters.appendChild(row); }
+    else { container.appendChild(row); }
 
-    // Wire events
     byId('rbPrevMonth').addEventListener('click', function(){ shiftMonth(-1); });
     byId('rbNextMonth').addEventListener('click', function(){ shiftMonth(1); });
     byId('rbThisMonth').addEventListener('click', function(){ applyMonth(0); });
 
-    // Initialize label to current month
     var start = monthStart(new Date(), 0);
     var label = byId('rbMonthLabel');
     if (label) label.textContent = formatHebMonth(start);
   }
 
-  // Hook into page navigation to create the UI when opening Detailed Reports
   var _showPage = window.showPage;
   window.showPage = function(name){
     if (typeof _showPage === 'function') try { _showPage.apply(this, arguments); } catch(e){}
@@ -3704,7 +3705,6 @@ if (document.readyState === 'loading'){
     }
   };
 
-  // Also attempt on DOMContentLoaded in case the page loads directly
   document.addEventListener('DOMContentLoaded', function(){
     try{ ensureMonthNav(); } catch(e){}
   });
