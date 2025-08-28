@@ -60,7 +60,7 @@
     const code = adminCode.value.trim();
     if (!code){ alert('נא להזין קוד מנהל'); return; }
     localStorage.setItem('rb_admin_code', code);
-    const resp = await postJSON(window.RB_API, {action:'joinWithAdmin', admin_code: code});
+    const resp = await postJSON(window.RB_API, {action:'joinByAdminCode', admin_code: code});
     if (resp && resp.tenant_id && resp.secret){
       const pack = resp.tenant_id + ':' + resp.secret;
       localStorage.setItem('rb_tenant', pack);

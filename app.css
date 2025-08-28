@@ -11,9 +11,9 @@ html,body{ height:100%; margin:0; background:var(--bg); color:var(--text); font-
 .card{ background:var(--panel); border:1px solid #1e293b; border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25);}
 h2{ margin:0 0 12px 0; font-size:20px;}
 .row{ display:flex; gap:8px; align-items:center;}
-input, textarea{ width:100%; padding:10px 12px; border-radius:12px; border:1px solid #1e293b; background:#0b1428; color:var(--text); }
+input, textarea{ width:100%; padding:10px 12px; border-radius:12px; border:1px solid #1e293b; background:#0b1428; color:#e2e8f0; }
 textarea{ resize:vertical; min-height:120px; }
-.btn{ padding:10px 14px; border-radius:12px; border:1px solid #1f2a3a; background:#1b2437; color:var(--text); cursor:pointer; transition:.15s; }
+.btn{ padding:10px 14px; border-radius:12px; border:1px solid #1f2a3a; background:#1b2437; color:#e2e8f0; cursor:pointer; transition:.15s; }
 .btn:hover{ transform:translateY(-1px); }
 .btn.primary{ background:var(--primary); border-color:#1d4ed8; }
 .btn.ghost{ background:transparent; }
