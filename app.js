@@ -12,6 +12,9 @@
   const bizOut = $('#bizOut');
   const employees = $('#employees');
   const empOut = $('#empOut');
+  const diagOut = $('#diagOut');
+  const btnDiag = $('#btnDiag');
+  const btnCopyPack = $('#btnCopyPack');
 
   // Load persisted values
   apiInput.value = window.RB_API || '';
@@ -79,7 +82,7 @@
     const name = bizName.value.trim();
     if (!name){ alert('נא להזין שם עסק'); return; }
     const resp = await postJSON(window.RB_API, {action:'updateBusiness', tenant_id, secret, business_name: name});
-    bizOut.value = (resp && resp.ok) ? 'עודכן' : ('שגיאה: ' + (resp && (resp.error||resp.message)));
+    bizOut.value = (resp && resp.updated) ? 'עודכן' : ('שגיאה: ' + (resp && (resp.error||resp.message)));
   };
 
   // (4) Add employees
@@ -94,7 +97,44 @@
     });
     if (!list.length){ alert('אין נתונים'); return; }
     const resp = await postJSON(window.RB_API, {action:'addEmployees', tenant_id, secret, employees: JSON.stringify(list)});
-    empOut.value = resp && resp.ok ? 'נוסף!' : ('שגיאה: ' + (resp && (resp.error||resp.message)));
+    empOut.value = resp && resp.added >= 0 ? `נוספו ${resp.added}` : ('שגיאה: ' + (resp && (resp.error||resp.message)));
+  };
+
+  // Diagnostics
+  btnDiag.onclick = async () => {
+    diagOut.textContent = 'בודק...';
+    const packStr = localStorage.getItem('rb_tenant') || '';
+    const [tenant_id, secret] = packStr.split(':');
+    if (!tenant_id || !secret){
+      diagOut.textContent = 'אין tenant מקומי — בצע הצטרפות (2)';
+      return;
+    }
+    const resp = await postJSON(window.RB_API, {action:'debugShowTenant', tenant_id, secret});
+    if (resp && resp.ok){
+      diagOut.textContent = JSON.stringify(resp, null, 2);
+    }else{
+      diagOut.textContent = 'השרת כנראה לא מכיר action=debugShowTenant. הדבק ל-Code.gs:\n' +
+`function debug_showTenant_(tenant_id, secret){
+  try{
+    const t = _getTenant(tenant_id, secret);
+    return _resp(true, { tenant_id: t.tenant_id, sheet_id: t.sheet_id });
+  }catch(e){
+    return _resp(false, { error: String(e) });
+  }
+}` + '\nובתוך doPost הוסף:\n' +
+`if (action === 'debugShowTenant') return _resp(true, debug_showTenant_(body.tenant_id, body.secret));` +
+'\nולא לשכוח Deploy → New version.';
+    }
+  };
+
+  btnCopyPack.onclick = async () => {
+    const pack = localStorage.getItem('rb_tenant') || '';
+    try{
+      await navigator.clipboard.writeText(pack);
+      alert('הועתק: ' + pack);
+    }catch(e){
+      alert('rb_tenant: ' + pack);
+    }
   };
 
 })(); 

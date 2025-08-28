@@ -19,7 +19,7 @@ textarea{ resize:vertical; min-height:120px; }
 .btn.ghost{ background:transparent; }
 .tags{ margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;}
 .chip{ background:var(--chip); color:#cbd5e1; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid #263241;}
-.pre{ background:#081022; border:1px solid #19253a; border-radius:12px; padding:10px; overflow:auto; max-height:160px; }
+.pre{ background:#081022; border:1px solid #19253a; border-radius:12px; padding:10px; overflow:auto; max-height:200px; }
 .out{ margin-top:10px; }
-.hint{ color:var(--muted); margin-top:-4px; }
+.hint{ color:var(--muted); margin-top:6px; font-size:12px;}
 .foot{ text-align:center; padding:20px; color:#64748b; }

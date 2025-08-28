@@ -65,6 +65,16 @@
       <button id="btnEmployees" class="btn primary">הוסף עובדים</button>
       <input id="empOut" class="out" placeholder="תוצאה תופיע כאן" disabled>
     </section>
+
+    <section class="card">
+      <h2>דיאגנוסטיקה</h2>
+      <div class="row">
+        <button id="btnDiag" class="btn">בדיקת טננט</button>
+        <button id="btnCopyPack" class="btn ghost">העתק tenant_id:secret</button>
+      </div>
+      <pre id="diagOut" class="pre" style="min-height:84px"></pre>
+      <p class="hint">הכפתור קורא ל-<code>debugShowTenant</code> בשרת. אם אין פעולה כזו, יופיע טקסט מוכן להדבקה ל-<code>Code.gs</code>.</p>
+    </section>
   </main>
 
   <footer class="foot">ClockWork — Dark Starter ©</footer>
