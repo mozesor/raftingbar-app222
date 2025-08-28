@@ -1,0 +1,25 @@
+
+:root{ --bg:#0b1220; --panel:#0f172a; --muted:#94a3b8; --text:#e2e8f0; --primary:#2563eb; --chip:#1e293b; }
+*{ box-sizing:border-box; }
+html,body{ height:100%; margin:0; background:var(--bg); color:var(--text); font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial; }
+.topbar{ display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#0a1020; border-bottom:1px solid #0b1a33; position:sticky; top:0; z-index:10;}
+.brand{ font-weight:700;}
+.meta{ font-size:12px; color:var(--muted);}
+.apiBar{ display:flex; gap:8px; align-items:center; padding:12px 16px; background:#0c1324; border-bottom:1px solid #0b1a33; position:sticky; top:48px; z-index:9;}
+.apiInput{ flex:1; padding:8px; border-radius:10px; border:1px solid #1e293b; background:var(--panel); color:var(--text); }
+.grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; padding:16px;}
+.card{ background:var(--panel); border:1px solid #1e293b; border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25);}
+h2{ margin:0 0 12px 0; font-size:20px;}
+.row{ display:flex; gap:8px; align-items:center;}
+input, textarea{ width:100%; padding:10px 12px; border-radius:12px; border:1px solid #1e293b; background:#0b1428; color:var(--text); }
+textarea{ resize:vertical; min-height:120px; }
+.btn{ padding:10px 14px; border-radius:12px; border:1px solid #1f2a3a; background:#1b2437; color:var(--text); cursor:pointer; transition:.15s; }
+.btn:hover{ transform:translateY(-1px); }
+.btn.primary{ background:var(--primary); border-color:#1d4ed8; }
+.btn.ghost{ background:transparent; }
+.tags{ margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;}
+.chip{ background:var(--chip); color:#cbd5e1; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid #263241;}
+.pre{ background:#081022; border:1px solid #19253a; border-radius:12px; padding:10px; overflow:auto; max-height:160px; }
+.out{ margin-top:10px; }
+.hint{ color:var(--muted); margin-top:-4px; }
+.foot{ text-align:center; padding:20px; color:#64748b; }

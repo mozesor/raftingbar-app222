@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ClockWork — Starter UI</title>
+  <meta name="theme-color" content="#0f172a"/>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="preconnect" href="https://script.google.com">
+  <link rel="preconnect" href="https://script.googleusercontent.com">
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">ClockWork — Starter UI</div>
+    <div class="meta"><span id="lsTag">localStorage</span></div>
+  </header>
+
+  <section class="apiBar">
+    <span>API: </span>
+    <input id="api" type="text" class="apiInput" />
+    <button id="saveApi" class="btn">שמור API</button>
+    <button id="clearState" class="btn ghost">ניקוי נתונים</button>
+  </section>
+
+  <main class="grid">
+    <section class="card">
+      <h2>(1) יצירת עסק חדש (Auto Provision)</h2>
+      <button id="btnProvision" class="btn primary">צור/הכן</button>
+      <input id="sheetLink" class="out" placeholder="Sheet link יופיע כאן" disabled>
+      <div class="tags">
+        <span class="chip">tenant_id</span>
+        <span class="chip">secret</span>
+        <span class="chip">business_name</span>
+        <span class="chip">admin_code</span>
+      </div>
+      <pre id="provOut" class="pre"></pre>
+    </section>
+
+    <section class="card">
+      <h2>(2) הצטרפות בעזרת קוד מנהל</h2>
+      <div class="row">
+        <button id="btnJoin" class="btn primary">הצטרף</button>
+        <input id="adminCode" placeholder="לדוגמה: 123456" />
+      </div>
+      <input id="tenantInfo" class="out" placeholder="tenant_id:secret (localStorage)" disabled>
+    </section>
+
+    <section class="card">
+      <h2>(3) עדכון שם העסק</h2>
+      <div class="row">
+        <button id="btnBiz" class="btn primary">עדכן</button>
+        <input id="bizName" placeholder="שם עסק חדש" />
+      </div>
+      <input id="bizOut" class="out" placeholder="תוצאה תופיע כאן" disabled>
+    </section>
+
+    <section class="card">
+      <h2>הוספת עובדים (4)</h2>
+      <p class="hint">כל שורה = עובד אחד. אפשרי: <b>שם , טל , קוד(אופציונלי)</b></p>
+      <textarea id="employees" rows="8" placeholder="זוזו ,050-1234567 ,4321
+אבי כהן ,052-3334444"></textarea>
+      <button id="btnEmployees" class="btn primary">הוסף עובדים</button>
+      <input id="empOut" class="out" placeholder="תוצאה תופיע כאן" disabled>
+    </section>
+  </main>
+
+  <footer class="foot">ClockWork — Dark Starter ©</footer>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js');
+      });
+    }
+  </script>
+</body>
+</html>
