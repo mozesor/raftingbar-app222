@@ -93,7 +93,7 @@
       return { name: parts[0]||'', phone: parts[1]||'', code: parts[2]||'' };
     });
     if (!list.length){ alert('אין נתונים'); return; }
-    const resp = await postJSON(window.RB_API, {action:'addEmployees', tenant_id, secret, employees:list});
+    const resp = await postJSON(window.RB_API, {action:'addEmployees', tenant_id, secret, employees: JSON.stringify(list)});
     empOut.value = resp && resp.ok ? 'נוסף!' : ('שגיאה: ' + (resp && (resp.error||resp.message)));
   };
 
