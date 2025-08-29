@@ -1,0 +1,109 @@
+
+/* Hide any legacy event UI */
+[id*='event'],[class*='event'],[id*='אירוע'],[class*='אירוע']{display:none !important;}
+
+
+
+/* ==== Dark Muted Theme Overrides ==== */
+:root {
+  --bg: #0f172a;           /* slate-900 */
+  --panel: #111827;        /* gray-900 */
+  --panel-2: #1f2937;      /* gray-800 */
+  --text: #e5e7eb;         /* gray-200 */
+  --muted: #9ca3af;        /* gray-400 */
+  --primary: #6366f1;      /* indigo-500 */
+  --primary-2: #818cf8;    /* indigo-400 */
+  --accent: #22d3ee;       /* cyan-400 */
+  --ok: #10b981;           /* emerald-500 (muted success) */
+  --warn: #f59e0b;         /* amber-500 */
+  --danger: #f43f5e;       /* rose-500 (muted compared to bright red) */
+  --surface: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.08);
+  --shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+body.dark {
+  background: radial-gradient(1200px 800px at 80% -20%, rgba(99,102,241,0.08), transparent),
+              linear-gradient(180deg, rgba(2,6,23,0.85), rgba(2,6,23,1));
+  color: var(--text);
+}
+
+.card, .panel, .container, .box {
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+input, select, textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+}
+input::placeholder, textarea::placeholder { color: var(--muted); }
+
+/* Buttons */
+button, .btn {
+  background: linear-gradient(180deg, var(--primary), var(--primary-2));
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(99,102,241,0.35);
+  transition: transform .06s ease, filter .2s ease, box-shadow .2s ease;
+}
+button:hover, .btn:hover { filter: brightness(1.05); box-shadow: 0 8px 22px rgba(99,102,241,0.45); }
+button:active, .btn:active { transform: translateY(1px); }
+
+/* Soft variants to replace harsh green/red */
+.btn-success, .success, .ok, .state-on {
+  background: linear-gradient(180deg, rgba(16,185,129,0.9), rgba(16,185,129,0.8));
+  box-shadow: 0 6px 16px rgba(16,185,129,0.25);
+  color: #062016;
+}
+.btn-danger, .danger, .state-off {
+  background: linear-gradient(180deg, rgba(244,63,94,0.9), rgba(244,63,94,0.8));
+  box-shadow: 0 6px 16px rgba(244,63,94,0.25);
+  color: #2a0a11;
+}
+.btn-warn, .warning {
+  background: linear-gradient(180deg, rgba(245,158,11,0.95), rgba(245,158,11,0.85));
+  color: #1a1200;
+}
+
+/* Links, labels */
+a { color: var(--accent); }
+label { color: var(--text); }
+
+/* Tables */
+table { border-collapse: collapse; width: 100%; }
+thead th { background: var(--panel-2); color: var(--text); position: sticky; top: 0; }
+tbody tr { border-bottom: 1px solid var(--border); }
+tbody tr:hover { background: rgba(255,255,255,0.03); }
+td, th { padding: 10px 12px; text-align: right; }
+
+/* Status badges */
+.badge { display:inline-block; padding: 6px 10px; border-radius: 999px; font-size: 12px; border:1px solid var(--border); }
+.badge.ok { background: rgba(16,185,129,0.15); color: #a7f3d0; }
+.badge.warn { background: rgba(245,158,11,0.15); color: #fde68a; }
+.badge.err { background: rgba(244,63,94,0.15); color: #fecdd3; }
+
+/* Charts (fallback classes if used) */
+.chart-bar { background: linear-gradient(180deg, var(--primary-2), var(--primary)); }
+.chart-bar.empty { background: #374151; }
+
+/* Headers/sections */
+h1,h2,h3 { color: #f3f4f6; }
+hr { border: none; height: 1px; background: var(--border); }
+
+/* Remove any previous bright reds/greens if defined inline */
+*[style*="background: red"], *[style*="background:red"],
+*[style*="background-color: red"], *[style*="background-color:red"] { background: rgba(244,63,94,0.85) !important; }
+*[style*="background: green"], *[style*="background:green"],
+*[style*="background-color: green"], *[style*="background-color:green"] { background: rgba(16,185,129,0.85) !important; }
+
