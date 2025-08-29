@@ -1,7 +1,7 @@
 // ===== ClockWork config (editable) =====
-window.RB_API = "https://script.google.com/macros/s/AKfycbz23eWcnMM9wCODXxxC_FOrVvhtyJobn8ui08SGI51S2odAu11mG4gFz8u03DiIZM0N/exec";
+window.RB_API = "https://script.google.com/macros/s/AKfycbz1OM7zGXcyFk7nwC0ZK-8ph3K_gOqTeYH38Uc4QdMZ_lJ5lUd02HLv0D9oG90mqxHR/exec";
 
-// Allow override via URL: ?api=https://...
+// Optional: allow override via URL: ?api=https://...
 (function(){
   try{
     const sp = new URLSearchParams(location.search);
