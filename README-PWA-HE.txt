@@ -1,28 +1,29 @@
-# שעון נוכחות – גרסת PWA ואנדרואיד (ללא אירועים)
 
-גרסה זו מנקה *את כל הפיצ'ר של "אירועים"* ומכינה:
+# שעון נוכחות – PWA + Apps Script (ללא אירועים)
 
-1. **PWA** מוכן להעלאה ל-GitHub Pages / אחסון סטטי.
-2. **פרויקט Capacitor** בסיסי לאנדרואיד (`android` ייווצר לאחר `npx cap add android`).
-
-## התקנה והפעלה – PWA
-- העלה את כל תוכן התיקייה לשורש ה-Hosting שלך (למשל gh-pages).
-- ודא שיש את הקבצים:
-  - `index.html`
-  - `manifest.webmanifest`
-  - `service-worker.js`
-  - איקונים (`icon-192.png`, `icon-512.png`, `maskable-512.png`)
-
-## בניית APK לאנדרואיד
-1. התקן Node.js ו-Capacitor:
-   ```bash
-   npm i -g @capacitor/cli
+## הגדרה מהירה
+1. פתח Google Apps Script חדש → הדבק את `Code.gs` (מצורף בתיקייה `apps_script` בזיפ).
+2. בקובץ `Code.gs` עדכן:
+   - `SHEET_ID = "1BxSOIHpJSY3UrO-x_PL2amHivd4K_UBhK8EbQsSHVGI"` (כבר עודכן עבורך)
+   - `ADMIN_TOKEN = "1986"` (אפשר לשנות)
+3. פרוס כ־**Web App**: Deploy → New Deployment → Web app
+   - Execute as: **Me**
+   - Who has access: **Anyone**
+   - קבל את ה-URL (web app).
+4. בקובץ `index.html` עדכן את:
+   ```js
+   const webAppUrl = "הדבק כאן את ה-URL שקיבלת";
    ```
-2. בתיקייה `clockapp_capacitor_android` הרץ:
-   ```bash
-   npx cap add android
-   npx cap copy android
-   npx cap open android   # פותח Android Studio לבנייה וחתימה
-   ```
+5. העלה את תיקיית ה־PWA (התוכן של התיקייה הראשית בזיפ) ל־GitHub Pages או אחסון סטטי.
+6. פתח מהנייד → “הוסף למסך הבית”.
 
-> שים לב: אם יש לך קריאות ל-Google Apps Script עבור שעות/דוחות – הן נשארו. רק "אירועים" הוסרו/הוסתרו.
+## גיליון נתונים (מינימום הכרחי)
+- גיליון בשם **Employees**: עמודה A = שם עובד (שורה ראשונה כותרת: `Name`).
+- גיליון בשם **Attendance**: כותרות: `Timestamp,Employee,Action`.
+
+## נקודות API
+- GET  `?fn=employees&token=...` → { employees: [...] }
+- POST body JSON `{fn:'log', token, employee, action:'in'|'out', ts: ISO}`
+- GET  `?fn=stats&token=...` → { todayHours: number, activeCount: number }
+
+> ניתן להרחיב בקלות לסטטיסטיקות מתקדמות, דוחות חודשי וכו'.

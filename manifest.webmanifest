@@ -1,18 +1,14 @@
 {
-  "name": "שעון נוכחות - רפטינג בר",
+  "name": "שעון נוכחות – רפטינג בר",
   "short_name": "שעון נוכחות",
-  "description": "אפליקציית PWA לניהול נוכחות עובדים (ללא אירועים).",
-  "start_url": "/index.html",
+  "description": "אפליקציית PWA לרישום נוכחות עובדים (ללא אירועים).",
+  "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#667eea",
-  "background_color": "#667eea",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
   "lang": "he",
   "dir": "rtl",
-  "categories": [
-    "business",
-    "productivity"
-  ],
   "icons": [
     {
       "src": "icon-192.png",
